@@ -26,9 +26,15 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            // Phone is the login ID and unique (spec §1.1); the factory must
+            // always set it or inserts fail on the NOT NULL column.
+            'phone' => '01'.fake()->unique()->numerify('#########'),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'locale' => 'bn',
+            'country' => 'BD',
+            'status' => 'active',
             'remember_token' => Str::random(10),
         ];
     }

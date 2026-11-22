@@ -1,0 +1,77 @@
+<?php
+
+// Builder A: auth strings. All auth/profile UI text lives here — no hardcoded
+// Bengali/English strings in Blade (spec §0 rule 3).
+
+return [
+    // Page titles / descriptions (also used for $seo).
+    'login_title' => 'Login',
+    'login_description' => 'Log in to LearnVow with your phone number and password.',
+    'register_title' => 'Register',
+    'register_description' => 'Create a new LearnVow account.',
+    'otp_title' => 'OTP Verification',
+    'otp_description' => 'Enter the 6-digit OTP sent to your phone.',
+    'forgot_title' => 'Forgot Password',
+    'forgot_description' => 'Enter your phone number — an OTP will be sent.',
+    'reset_title' => 'New Password',
+    'reset_description' => 'Set a new password using the OTP.',
+
+    // Form labels.
+    'name' => 'Name',
+    'phone' => 'Phone number',
+    'phone_placeholder' => '01XXXXXXXXX',
+    'email' => 'Email (optional)',
+    'password' => 'Password',
+    'password_confirmation' => 'Confirm password',
+    'remember_me' => 'Remember me',
+    'otp_code' => 'OTP code',
+    'new_password' => 'New password',
+    'current_password' => 'Current password',
+
+    // Buttons / links.
+    'login_button' => 'Log in',
+    'register_button' => 'Create account',
+    'verify_button' => 'Verify',
+    'send_otp_button' => 'Send OTP',
+    'resend_otp' => 'Resend OTP',
+    'reset_button' => 'Change password',
+    'forgot_password' => 'Forgot password?',
+    'no_account' => 'No account yet?',
+    'have_account' => 'Already have an account?',
+    'register_link' => 'Register',
+    'login_link' => 'Log in',
+    'back_to_login' => 'Back to login',
+
+    // Messages.
+    'login_failed' => 'The phone number or password is incorrect.',
+    'too_many_attempts' => 'Too many failed attempts. Try again in :seconds seconds.',
+    'otp_sent' => 'OTP sent.',
+    'otp_invalid' => 'The OTP code is incorrect. Please try again.',
+    'otp_hint' => 'In dev mode any 6-digit code works.',
+    'password_reset' => 'Password changed. Log in with your new password.',
+    'registered' => 'Account created.',
+
+    // Profile.
+    'profile_title' => 'Profile',
+    'profile_description' => 'Your profile and settings.',
+    'edit_profile_title' => 'Edit Profile',
+    'privacy_title' => 'Privacy & My Data',
+    'delete_title' => 'Delete Account',
+    'locale' => 'Language',
+    'country' => 'Country',
+    'status' => 'Status',
+    'roles' => 'Roles',
+    'phone_verified' => 'Phone verified',
+    'phone_not_verified' => 'Phone not verified',
+    'member_since' => 'Member since',
+    'save_changes' => 'Save changes',
+    'edit_profile' => 'Edit profile',
+    'privacy_choices' => 'Privacy choices',
+    'delete_account' => 'Delete account',
+    'delete_warning' => 'Warning: deleting your account permanently removes your library, wishlist and all data. This cannot be undone.',
+    'delete_confirm' => 'Enter your password to delete.',
+    'delete_button' => 'Delete my account permanently',
+    'delete_super_admin_refused' => 'The Super Admin account cannot be deleted.',
+    'profile_updated' => 'Profile updated.',
+    'account_deleted' => 'Your account has been deleted.',
+];
