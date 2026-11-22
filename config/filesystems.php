@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Book Files Disk (Phase 2)
+    |--------------------------------------------------------------------------
+    |
+    | 'bookfiles' is the local disk for demo EPUBs (user decision
+    | 2026-11-22: local-only for now; R2 is added at production time).
+    | BookFileService reads this key — never hardcode a disk name in
+    | controllers or Livewire components.
+    |
+    */
+
+    'bookfiles_disk' => env('BOOKFILES_DISK', 'bookfiles'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -34,6 +48,27 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/private'),
             'serve' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Book files (EPUB/audio/cover) — private, never served directly.
+        'bookfiles' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/bookfiles'),
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Cloudflare R2 (production only — credentials arrive later).
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
             'report' => false,
         ],

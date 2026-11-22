@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'title' => 'আমার ওয়ালেট',
+    'balance' => 'ব্যালেন্স',
+    'referral_credit' => 'রেফারেল ক্রেডিট ৳:amount — শুধু অ্যাপে খরচ করা যাবে',
+    'referral_credit_note' => 'রেফারেল ক্রেডিট কখনো ক্যাশে বদলানো যাবে না, তোলা বা ট্রান্সফার করা যাবে না।',
+    'transactions' => 'লেনদেনের ইতিহাস',
+    'topup' => 'টপ-আপ করুন',
+    'topup_amount' => 'টপ-আপের অঙ্ক (৳)',
+    'topup_submitted' => 'টপ-আপের TrxID জমা হয়েছে। যাচাই হলে ওয়ালেটে যোগ হবে।',
+    'saved_title' => 'সেভড পেমেন্ট ও অটো-রিনিউ',
+    'saved_note' => 'ম্যানুয়াল Send Money-তে সেভড কার্ড/অটো-রিনিউ সম্ভব নয় — অটো-রিনিউ গেটওয়ে এলে চালু হবে।',
+    'points_title' => 'আমার পয়েন্ট ও পুরস্কার',
+    'points_balance' => 'পয়েন্ট ব্যালেন্স',
+    'points_note' => 'পয়েন্ট দিয়ে বই কেনা যাবে, ক্যাশে বদলানো যাবে না।',
+    'points_per_purchase' => 'বই কিনলে :points পয়েন্ট',
+    'points_per_finish' => 'বই শেষ করলে :points পয়েন্ট',
+    'type_topup' => 'টপ-আপ',
+    'type_purchase' => 'কেনা',
+    'type_refund' => 'রিফান্ড',
+    'type_referral_credit' => 'রেফারেল ক্রেডিট',
+    'type_points_redeem' => 'পয়েন্ট দিয়ে কেনা',
+    'type_adjustment' => 'সমন্বয়',
+    'no_transactions' => 'এখনো কোনো লেনদেন নেই।',
+];

@@ -8,7 +8,12 @@
   @else
     <div class="book-grid">
       @foreach($userBooks as $userBook)
-        <x-book-card :book="$userBook->book" />
+        <div>
+          <x-book-card :book="$userBook->book" />
+          @if(in_array($userBook->book->id, $finishedBookIds ?? [], true))
+            <span class="badge">{{ __('reader.finished_badge') }}</span>
+          @endif
+        </div>
       @endforeach
     </div>
     <div style="margin-top:16px">{{ $userBooks->links() }}</div>

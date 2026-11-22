@@ -1,0 +1,201 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Book;
+use App\Models\Bookmark;
+use App\Models\Highlight;
+use App\Models\Note;
+use App\Models\ReaderSetting;
+use App\Models\ReadingProgress;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Reader rules: per-book settings, progress, bookmarks / highlights /
+ * notes. Spec §1, §11 — Builder A owns the methods inside this file
+ * (the coordinator only created the file).
+ *
+ * Fallback order for settings (§1.2): this book's row → the user's
+ * default (users.reader_default_font / reader_default_size, added by
+ * Builder B's §6.22 migration — guarded with hasColumn until it lands)
+ * → system default (serif, 100%, line-height 1.60, paper, 100%, paged).
+ */
+class ReaderService
+{
+    public const SYSTEM_DEFAULTS = [
+        'font_family' => 'serif',
+        'font_size' => 100,
+        'line_height' => 1.60,
+        'theme' => 'paper',
+        'brightness' => 100,
+        'reading_mode' => 'paged',
+    ];
+
+    /** Per-book settings, falling back to user default then system default. */
+    public function settingsFor(User $user, Book $book): ReaderSetting
+    {
+        $row = ReaderSetting::where('user_id', $user->id)
+            ->where('book_id', $book->id)
+            ->first();
+
+        if ($row !== null) {
+            return $row;
+        }
+
+        $defaults = self::SYSTEM_DEFAULTS;
+
+        if (Schema::hasColumn('users', 'reader_default_font')
+            && $user->reader_default_font !== null) {
+            $defaults['font_family'] = $user->reader_default_font;
+        }
+
+        if (Schema::hasColumn('users', 'reader_default_size')
+            && $user->reader_default_size !== null) {
+            $defaults['font_size'] = (int) $user->reader_default_size;
+        }
+
+        return new ReaderSetting(array_merge(
+            ['user_id' => $user->id, 'book_id' => $book->id],
+            $defaults
+        ));
+    }
+
+    /** Save per-book settings (only this book's row ever changes, §1.2). */
+    public function saveSettings(User $user, Book $book, array $data): ReaderSetting
+    {
+        $clean = [
+            'font_family' => in_array($data['font_family'] ?? null, ['serif', 'sans'], true)
+                ? $data['font_family'] : self::SYSTEM_DEFAULTS['font_family'],
+            'font_size' => min(200, max(80, (int) ($data['font_size'] ?? 100))),
+            'line_height' => min(2.20, max(1.40, (float) ($data['line_height'] ?? 1.60))),
+            'theme' => in_array($data['theme'] ?? null, ['paper', 'sepia', 'night'], true)
+                ? $data['theme'] : 'paper',
+            'brightness' => min(100, max(50, (int) ($data['brightness'] ?? 100))),
+            'reading_mode' => in_array($data['reading_mode'] ?? null, ['paged', 'scroll'], true)
+                ? $data['reading_mode'] : 'paged',
+        ];
+
+        return ReaderSetting::updateOrCreate(
+            ['user_id' => $user->id, 'book_id' => $book->id],
+            $clean
+        );
+    }
+
+    public function progressFor(User $user, Book $book): ?ReadingProgress
+    {
+        return ReadingProgress::where('user_id', $user->id)
+            ->where('book_id', $book->id)
+            ->first();
+    }
+
+    /**
+     * Save progress. Conflict rule (§1.3): the server wins by
+     * last_read_at — a save older than the stored row is ignored.
+     * total_minutes only ever grows (minutes are cumulative).
+     * Reaching 100% sets finished_at (X71 / X82).
+     */
+    public function saveProgress(User $user, Book $book, array $data): ReadingProgress
+    {
+        $incomingAt = isset($data['last_read_at'])
+            ? now()->parse($data['last_read_at'])
+            : now();
+
+        $existing = $this->progressFor($user, $book);
+
+        if ($existing !== null && $existing->last_read_at !== null
+            && $incomingAt->lt($existing->last_read_at)) {
+            return $existing;
+        }
+
+        $percent = min(100, max(0, (int) ($data['percent'] ?? $existing->percent ?? 0)));
+
+        $progress = ReadingProgress::updateOrCreate(
+            ['user_id' => $user->id, 'book_id' => $book->id],
+            [
+                'cfi' => $data['cfi'] ?? $existing?->cfi,
+                'percent' => $percent,
+                'chapter_index' => max(0, (int) ($data['chapter_index'] ?? $existing->chapter_index ?? 0)),
+                'total_minutes' => max(
+                    $existing->total_minutes ?? 0,
+                    max(0, (int) ($data['total_minutes'] ?? $existing->total_minutes ?? 0))
+                ),
+                'last_read_at' => $incomingAt,
+            ]
+        );
+
+        if ($percent >= 100 && $progress->finished_at === null) {
+            $progress->finished_at = $incomingAt;
+            $progress->save();
+        }
+
+        return $progress->fresh();
+    }
+
+    /** Pool qualification (§1.3): >= 10 minutes OR >= 10% read. Pool math is Phase 3. */
+    public function qualifiesForPool(ReadingProgress $progress): bool
+    {
+        return $progress->total_minutes >= 10 || $progress->percent >= 10;
+    }
+
+    public function addBookmark(User $user, Book $book, string $cfi, ?string $label = null): Bookmark
+    {
+        return Bookmark::create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'cfi' => $cfi,
+            'label' => $label,
+        ]);
+    }
+
+    public function removeBookmark(User $user, Bookmark $bookmark): void
+    {
+        abort_unless($bookmark->user_id === $user->id, 403);
+        $bookmark->delete();
+    }
+
+    /** @return Collection<int, Bookmark> */
+    public function listBookmarks(User $user, ?Book $book = null): Collection
+    {
+        return Bookmark::where('user_id', $user->id)
+            ->when($book !== null, fn ($q) => $q->where('book_id', $book->id))
+            ->with('book')
+            ->latest()
+            ->get();
+    }
+
+    public function addHighlight(User $user, Book $book, string $cfiStart, string $cfiEnd, string $color = 'yellow', ?string $note = null): Highlight
+    {
+        return Highlight::create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'cfi_start' => $cfiStart,
+            'cfi_end' => $cfiEnd,
+            'color' => in_array($color, ['yellow', 'green', 'blue', 'pink'], true) ? $color : 'yellow',
+            'note' => $note,
+        ]);
+    }
+
+    public function removeHighlight(User $user, Highlight $highlight): void
+    {
+        abort_unless($highlight->user_id === $user->id, 403);
+        $highlight->delete();
+    }
+
+    public function addNote(User $user, Book $book, string $cfi, string $body): Note
+    {
+        return Note::create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'cfi' => $cfi,
+            'body' => $body,
+        ]);
+    }
+
+    public function removeNote(User $user, Note $note): void
+    {
+        abort_unless($note->user_id === $user->id, 403);
+        $note->delete();
+    }
+}

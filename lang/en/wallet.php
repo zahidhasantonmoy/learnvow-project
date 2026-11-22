@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'title' => 'My wallet',
+    'balance' => 'Balance',
+    'referral_credit' => 'Referral credit ৳:amount — in-app spend only',
+    'referral_credit_note' => 'Referral credit can never be converted to cash, withdrawn or transferred.',
+    'transactions' => 'Transaction history',
+    'topup' => 'Top up',
+    'topup_amount' => 'Top-up amount (৳)',
+    'topup_submitted' => 'Top-up TrxID submitted. It will be added to your wallet once verified.',
+    'saved_title' => 'Saved payments & auto-renew',
+    'saved_note' => 'Manual Send Money has no saved cards or auto-renew — auto-renew will start when a gateway arrives.',
+    'points_title' => 'My points & rewards',
+    'points_balance' => 'Points balance',
+    'points_note' => 'Points can buy books, never convert to cash.',
+    'points_per_purchase' => ':points points per book purchase',
+    'points_per_finish' => ':points points per finished book',
+    'type_topup' => 'Top-up',
+    'type_purchase' => 'Purchase',
+    'type_refund' => 'Refund',
+    'type_referral_credit' => 'Referral credit',
+    'type_points_redeem' => 'Points redemption',
+    'type_adjustment' => 'Adjustment',
+    'no_transactions' => 'No transactions yet.',
+];
