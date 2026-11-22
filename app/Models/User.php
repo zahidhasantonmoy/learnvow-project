@@ -12,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'phone', 'email', 'password', 'locale', 'country', 'status'])]
+#[Fillable(['name', 'phone', 'email', 'password', 'locale', 'country', 'status', 'wallet_balance_bdt', 'points_balance', 'trial_used_at', 'referral_code', 'reader_default_font', 'reader_default_size'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -64,6 +64,11 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'password' => 'hashed',
+            // Phase 2 (spec §6.22).
+            'trial_used_at' => 'datetime',
+            'wallet_balance_bdt' => 'integer',
+            'points_balance' => 'integer',
+            'reader_default_size' => 'integer',
         ];
     }
 }

@@ -15,5 +15,9 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "epubjs": "^0.3.93",
+        "jszip": "^3.10.2"
     }
 }

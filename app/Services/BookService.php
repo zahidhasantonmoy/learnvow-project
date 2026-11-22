@@ -139,12 +139,30 @@ class BookService
     }
 
     /**
-     * May this user read the full book? Entitlement lives in user_books
-     * (spec §1.8); free books are open to any logged-in reader.
+     * May this user read the full book? Phase 2 rules (spec §2.3, A19):
+     *  1. A bought/gifted/free entitlement (user_books) always reads —
+     *     even when the book is taken_down (old buyers keep access).
+     *  2. A published free book reads for any logged-in user.
+     *  3. Premium (trialing/active, or cancelled but still in term,
+     *     and not expired) reads a published book
+     *     whose is_subscription_included is true.
+     *  4. Otherwise no (checkout). Premium does NOT open a taken_down
+     *     book — only prior buyers keep that access (roles doc edge 5;
+     *     the spec leaves Premium-on-taken_down open, this is the call).
+     * The Subscription model/table may not exist yet while Builder B
+     * works — guard so canRead stays safe until then.
      */
     public function canRead(?User $user, Book $book): bool
     {
-        if ($user === null || $book->status !== 'published') {
+        if ($user === null) {
+            return false;
+        }
+
+        if ($book->userBooks()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
+        if ($book->status !== 'published') {
             return false;
         }
 
@@ -152,7 +170,36 @@ class BookService
             return true;
         }
 
-        return $book->userBooks()->where('user_id', $user->id)->exists();
+        if (! $book->is_subscription_included) {
+            return false;
+        }
+
+        return $this->hasActivePremium($user);
+    }
+
+    /** Premium trialing/active and not past its end (spec §2.2). */
+    public function hasActivePremium(User $user): bool
+    {
+        if (! class_exists(\App\Models\Subscription::class)
+            || ! Schema::hasTable('subscriptions')) {
+            return false;
+        }
+
+        $subscription = \App\Models\Subscription::where('user_id', $user->id)
+            ->whereIn('status', ['trialing', 'active', 'cancelled'])
+            ->orderByDesc('ends_at')
+            ->first();
+
+        if ($subscription === null) {
+            return false;
+        }
+
+        // Cancelled runs to end of term (§2.2) — no refund, access stays.
+        $end = $subscription->status === 'trialing'
+            ? ($subscription->trial_ends_at ?? $subscription->ends_at)
+            : $subscription->ends_at;
+
+        return $end !== null && $end->isFuture();
     }
 
     /** Book JSON-LD (spec §3.1): real fields only — no fake ISBN/rating. */

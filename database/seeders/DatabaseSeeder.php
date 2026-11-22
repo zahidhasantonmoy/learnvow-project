@@ -16,9 +16,14 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             AuthorSeeder::class,
             BookSeeder::class,
-            // DemoUserSeeder LAST: it links the demo reader's free-book
-            // entitlements and the demo author to the seeded books/authors.
+            // Phase 2 — Builder A: demo EPUB files for the seeded books.
+            BookFileSeeder::class,
+            // DemoUserSeeder LAST for Phase 1 links; Phase 2's BillingSeeder
+            // comes after it (demo orders/payments need the demo users).
             DemoUserSeeder::class,
+            // Phase 2 — Builder B: plan, EID26, gift code, wallet/points,
+            // demo orders, payments, subscription.
+            BillingSeeder::class,
         ]);
     }
 }

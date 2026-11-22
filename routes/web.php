@@ -33,6 +33,8 @@ Route::prefix('{locale}')->where(['locale' => 'bn|en'])->middleware(SetLocale::c
     require __DIR__.'/books.php';
     require __DIR__.'/auth.php';
     require __DIR__.'/profile.php';
+    require __DIR__.'/reader.php'; // Phase 2 — Builder A
+    require __DIR__.'/billing.php'; // Phase 2 — Builder B
 });
 
 // Admin routes outside the locale prefix (Filament serves /admin itself).
