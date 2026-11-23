@@ -20,6 +20,7 @@ class CheckoutForm extends Component
     public ?int $planId = null;
     public string $couponCode = '';
     public int $walletUse = 0;
+    public bool $useWallet = false;
     public string $method = 'bkash';
     public string $trxId = '';
     public ?string $error = null;
@@ -34,13 +35,16 @@ class CheckoutForm extends Component
 
     public function priced(BillingService $billing): array
     {
+        // C6: the wallet checkbox spends up to the full amount due.
+        // priceOrder() itself caps at min(balance, amount due), so the
+        // server never trusts the checkbox value — it recomputes.
         return $billing->priceOrder([
             'user' => auth()->user(),
             'type' => $this->type,
             'book_id' => $this->bookId,
             'plan_id' => $this->planId,
             'coupon_code' => $this->couponCode,
-            'wallet_use_bdt' => $this->walletUse,
+            'wallet_use_bdt' => $this->useWallet ? PHP_INT_MAX : $this->walletUse,
         ]);
     }
 

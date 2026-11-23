@@ -33,6 +33,7 @@ return [
     'coupon_applied' => 'কুপন প্রয়োগ হয়েছে।',
     'coupon_invalid' => 'এই কুপন কোডটি প্রযোজ্য নয়।',
     'wallet_use' => 'ওয়ালেট থেকে ব্যবহার করুন',
+    'wallet_balance' => 'ওয়ালেট ব্যালেন্স',
     'payment_method' => 'পেমেন্টের মাধ্যম',
     'bkash' => 'bKash',
     'nagad' => 'Nagad',

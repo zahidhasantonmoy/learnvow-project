@@ -10,6 +10,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\EmbeddedTable;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -57,6 +59,17 @@ class FraudAlert extends Page implements HasTable
     public static function shouldRegisterNavigation(): bool
     {
         return static::canAccess();
+    }
+
+    public function content(Schema $schema): Schema
+    {
+        // Filament v5: a Page's table() alone renders nothing — the table
+        // must be embedded in the page's content schema (as ListRecords
+        // does with EmbeddedTable). Without this the page shows only the
+        // heading and no <table> at all.
+        return $schema->components([
+            EmbeddedTable::make(),
+        ]);
     }
 
     public function table(Table $table): Table

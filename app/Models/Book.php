@@ -20,6 +20,9 @@ class Book extends Model
         'status', 'cover_c1', 'cover_c2', 'cover_image_path', 'file_path',
         'rights_territories', 'rating_avg', 'ratings_count', 'sales_count',
         'readers_count', 'published_at',
+        // Phase 3 (§7.16).
+        'is_paused', 'hidden_at', 'allow_pod', 'allow_licensed_pdf',
+        'print_price_bdt', 'is_featured',
     ];
 
     protected function casts(): array
@@ -38,6 +41,13 @@ class Book extends Model
             'sales_count' => 'integer',
             'readers_count' => 'integer',
             'published_at' => 'datetime',
+            // Phase 3 (§7.16).
+            'is_paused' => 'boolean',
+            'hidden_at' => 'datetime',
+            'allow_pod' => 'boolean',
+            'allow_licensed_pdf' => 'boolean',
+            'print_price_bdt' => 'integer',
+            'is_featured' => 'boolean',
         ];
     }
 
@@ -82,7 +92,12 @@ class Book extends Model
 
     public function scopePublished($query)
     {
-        return $query->where('status', 'published');
+        // Phase 3 (§1.4, §5.2): paused and hidden books leave the public
+        // catalogue/search/book page/home/sitemap. Old-buyer access is
+        // decided by BookService::canRead(), never by this scope.
+        return $query->where('status', 'published')
+            ->where('is_paused', false)
+            ->whereNull('hidden_at');
     }
 
     public function scopeFree($query)

@@ -33,6 +33,7 @@ return [
     'coupon_applied' => 'Coupon applied.',
     'coupon_invalid' => 'This coupon code does not apply.',
     'wallet_use' => 'Pay from wallet',
+    'wallet_balance' => 'Wallet balance',
     'payment_method' => 'Payment method',
     'bkash' => 'bKash',
     'nagad' => 'Nagad',

@@ -5,13 +5,16 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use App\Services\AdminService;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
@@ -65,7 +68,11 @@ class UserResource extends BaseAdminResource
             TextInput::make('email')
                 ->label(__('admin.users.email'))
                 ->email()
-                ->required()
+                // C7: registration is phone-only — every demo user has NULL
+                // email, so a required email blocks every save. Optional;
+                // unique when present, ignoring the current record.
+                ->nullable()
+                ->dehydrateStateUsing(fn ($state) => $state === '' || $state === null ? null : $state)
                 ->maxLength(255)
                 ->unique(ignoreRecord: true),
         ];
@@ -100,6 +107,10 @@ class UserResource extends BaseAdminResource
                     $assignable,
                 ))
                 ->columns(2);
+            // The author role is never hand-assignable (spec §4.3) — it
+            // comes only via application approval.
+            $components[] = Placeholder::make('author_role_note')
+                ->content(__('admin.users_extra.author_role_note'));
         }
 
         return $schema->components($components);
@@ -158,6 +169,47 @@ class UserResource extends BaseAdminResource
         return $table
             ->columns($columns)
             ->actions([
+                // Suspend / ban / restore — SUPER ADMIN ONLY (roles doc,
+                // spec §3.2). The owner account itself can never be
+                // suspended or banned (guarded in AdminService + policy).
+                Action::make('suspend')
+                    ->label(__('admin.actions.suspend'))
+                    ->icon('heroicon-o-pause-circle')
+                    ->color('warning')
+                    ->visible(fn (User $record) => AdminService::isSuperAdmin(auth()->user())
+                        && ! AdminService::userHasRole($record, 'super-admin')
+                        && $record->status !== 'suspended')
+                    ->form([
+                        Textarea::make('reason')->label(__('admin.actions.reason'))->rows(2),
+                    ])
+                    ->action(fn (User $record, array $data) => app(AdminService::class)
+                        ->suspendUser($record, auth()->user(), $data['reason'] ?? null))
+                    ->successNotificationTitle(__('admin.actions.suspended')),
+                Action::make('ban')
+                    ->label(__('admin.actions.ban'))
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    ->visible(fn (User $record) => AdminService::isSuperAdmin(auth()->user())
+                        && ! AdminService::userHasRole($record, 'super-admin')
+                        && $record->status !== 'banned')
+                    ->form([
+                        Textarea::make('reason')->label(__('admin.actions.reason'))->rows(2),
+                    ])
+                    ->action(fn (User $record, array $data) => app(AdminService::class)
+                        ->banUser($record, auth()->user(), $data['reason'] ?? null))
+                    ->successNotificationTitle(__('admin.actions.banned')),
+                Action::make('restore')
+                    ->label(__('admin.actions.restore'))
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('success')
+                    ->visible(fn (User $record) => AdminService::isSuperAdmin(auth()->user())
+                        && in_array($record->status, ['suspended', 'banned'], true))
+                    ->form([
+                        Textarea::make('reason')->label(__('admin.actions.reason'))->rows(2),
+                    ])
+                    ->action(fn (User $record, array $data) => app(AdminService::class)
+                        ->restoreUser($record, auth()->user(), $data['reason'] ?? null))
+                    ->successNotificationTitle(__('admin.actions.restored')),
                 ViewAction::make(),
                 EditAction::make(),
             ]);

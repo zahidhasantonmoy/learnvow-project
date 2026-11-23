@@ -13,8 +13,10 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\TakedownController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +36,8 @@ Route::get('/privacy', [PageController::class, 'privacy'])->name('pages.privacy'
 Route::get('/refund-policy', [PageController::class, 'refundPolicy'])->name('pages.refund');
 Route::get('/copyright', [PageController::class, 'copyright'])->name('pages.copyright');
 Route::get('/help', [PageController::class, 'help'])->name('pages.help');
+Route::get('/takedown', [TakedownController::class, 'create'])->name('takedown.create');
+Route::post('/takedown', [TakedownController::class, 'store'])->name('takedown.store');
 
 // Logged-in reader routes.
 Route::middleware('auth')->group(function () {
@@ -41,5 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/books/{slug}/wishlist', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
     Route::post('/books/{slug}/review', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::post('/books/{slug}/report', [ReportController::class, 'storeBook'])->name('reports.book');
+    Route::post('/reviews/{review}/report', [ReportController::class, 'storeReview'])->name('reports.review');
     Route::post('/authors/{slug}/follow', [AuthorController::class, 'follow'])->name('authors.follow');
 });

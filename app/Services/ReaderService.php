@@ -10,6 +10,7 @@ use App\Models\ReaderSetting;
 use App\Models\ReadingProgress;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -130,7 +131,58 @@ class ReaderService
             $progress->save();
         }
 
+        // Phase 3 (§2.3): feed the monthly reading-minutes ledger that
+        // the subscription pool is split from. Never blocks the save.
+        $this->recordReadingMinutes($user, $book, (int) ($existing->total_minutes ?? 0), (int) $progress->total_minutes);
+
         return $progress->fresh();
+    }
+
+    /**
+     * Phase 3 (§2.3) — Builder A. Record the delta minutes
+     * (new total_minutes − old total_minutes) into the current month's
+     * reading_minutes row (user, book, author, period YYYY-MM).
+     *
+     * Rules: minutes only ever grow; the author's own book is NEVER
+     * recorded (spec §2.2 rule 4). Tolerates Builder B's table not
+     * existing yet — the call is then a no-op, not an error.
+     */
+    public function recordReadingMinutes(User $user, Book $book, int $oldTotalMinutes, int $newTotalMinutes): void
+    {
+        $delta = $newTotalMinutes - $oldTotalMinutes;
+
+        if ($delta <= 0) {
+            return;
+        }
+
+        if (! Schema::hasTable('reading_minutes')) {
+            return;
+        }
+
+        // Never record minutes for the author's own book.
+        $authorUserId = DB::table('authors')->where('id', $book->author_id)->value('user_id');
+        if ($authorUserId !== null && (int) $authorUserId === (int) $user->id) {
+            return;
+        }
+
+        $period = now()->format('Y-m');
+
+        DB::table('reading_minutes')->upsert(
+            [[
+                'user_id' => $user->id,
+                'book_id' => $book->id,
+                'author_id' => $book->author_id,
+                'period' => $period,
+                'minutes' => $delta,
+                'counted' => false,
+                'flagged' => false,
+                'flag_note' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]],
+            ['user_id', 'book_id', 'period'],
+            ['minutes' => DB::raw('reading_minutes.minutes + '.$delta), 'updated_at' => now()]
+        );
     }
 
     /** Pool qualification (§1.3): >= 10 minutes OR >= 10% read. Pool math is Phase 3. */

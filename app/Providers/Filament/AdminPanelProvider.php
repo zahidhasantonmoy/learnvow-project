@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\AdminLogin;
 use App\Filament\AvatarProviders\LocalAvatarProvider;
+use App\Filament\Widgets\AdminOrdersChartWidget;
 use App\Filament\Widgets\AdminStatsWidget;
 use App\Http\Middleware\AuthenticateAdminPanel;
 use App\Http\Middleware\EnsureAdminPanelAccess;
@@ -14,6 +15,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -45,7 +47,15 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 AdminStatsWidget::class,
+                AdminOrdersChartWidget::class,
             ])
+            // Spec §9/§15 (minor): admin pages are never indexed — the
+            // noindex meta the web author pages already carry, via the
+            // panel's supported head render hook.
+            ->renderHook(
+                PanelsRenderHook::HEAD_START,
+                fn (): string => '<meta name="robots" content="noindex, nofollow">',
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

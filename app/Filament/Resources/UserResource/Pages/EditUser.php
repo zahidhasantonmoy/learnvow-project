@@ -17,6 +17,25 @@ class EditUser extends EditRecord
         return $data;
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // M4 (round 2): validate the requested roles BEFORE the record
+        // is saved, so a guard failure surfaces as a form error on
+        // `roles` and Filament never shows a false "Saved" toast.
+        // The same check runs again inside syncRolesForUser() (afterSave)
+        // as a second line of defence.
+        AdminService::validateRoleSync(
+            $this->record,
+            $data['roles'] ?? AdminService::userRoles($this->record),
+            auth()->user(),
+            // The form field's state path — the error must be keyed
+            // here for Filament to render it on the roles checkbox list.
+            'data.roles',
+        );
+
+        return $data;
+    }
+
     protected function afterSave(): void
     {
         AdminService::syncRolesForUser(

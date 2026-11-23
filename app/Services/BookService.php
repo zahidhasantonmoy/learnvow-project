@@ -88,7 +88,7 @@ class BookService
         // 1) Scout (database driver — LIKE over toSearchableArray columns).
         try {
             $scout = Book::search($query)
-                ->query(fn ($q) => $q->where('status', 'published'))
+                ->query(fn ($q) => $q->where('status', 'published')->where('is_paused', false)->whereNull('hidden_at'))
                 ->get();
             $found = $found->merge($scout);
         } catch (\Throwable) {
