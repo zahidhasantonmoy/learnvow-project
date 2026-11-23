@@ -35,6 +35,25 @@
           @livewire('wishlist-button', ['book' => $book, 'inWishlist' => $inWishlist])
         @endauth
       </p>
+      @auth
+        <details>
+          <summary>{{ __('moderation.reports.report_book') }}</summary>
+          <form method="POST" action="{{ route('reports.book', ['locale' => app()->getLocale(), 'slug' => $book->slug]) }}">
+            @csrf
+            <label>{{ __('moderation.reports.reason') }}
+              <select name="reason" required>
+                @foreach(['copyright', 'spam', 'abuse', 'wrong_content', 'other'] as $reason)
+                  <option value="{{ $reason }}">{{ __('moderation.reports.reason_'.$reason) }}</option>
+                @endforeach
+              </select>
+            </label>
+            <label>{{ __('moderation.reports.details') }}
+              <textarea name="details" rows="3" maxlength="2000"></textarea>
+            </label>
+            <button type="submit" class="btn">{{ __('moderation.reports.report_book') }}</button>
+          </form>
+        </details>
+      @endauth
     </div>
   </div>
 
@@ -45,6 +64,25 @@
       @if($review->title)<strong>{{ $review->title }}</strong>@endif
       <p>{{ $review->body }}</p>
       <p class="book-author">{{ $review->user->name ?? '' }} · {{ $review->created_at->toDateString() }}</p>
+      @auth
+        <details>
+          <summary>{{ __('moderation.reports.report_review') }}</summary>
+          <form method="POST" action="{{ route('reports.review', ['locale' => app()->getLocale(), 'review' => $review->id]) }}">
+            @csrf
+            <label>{{ __('moderation.reports.reason') }}
+              <select name="reason" required>
+                @foreach(['copyright', 'spam', 'abuse', 'wrong_content', 'other'] as $reason)
+                  <option value="{{ $reason }}">{{ __('moderation.reports.reason_'.$reason) }}</option>
+                @endforeach
+              </select>
+            </label>
+            <label>{{ __('moderation.reports.details') }}
+              <textarea name="details" rows="3" maxlength="2000"></textarea>
+            </label>
+            <button type="submit" class="btn">{{ __('moderation.reports.report_review') }}</button>
+          </form>
+        </details>
+      @endauth
     </div>
   @empty
     <p>{{ __('books.no_reviews_yet') }}</p>

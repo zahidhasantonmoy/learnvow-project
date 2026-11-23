@@ -8,6 +8,7 @@ use App\Services\AdminService;
 use App\Services\BillingService;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
@@ -266,6 +267,41 @@ class OrderResource extends BaseAdminResource
                     ]),
             ])
             ->actions([
+                // Refund queue (spec §3.4): Admin may take a request under
+                // review; approve / reject is SUPER ADMIN ONLY.
+                Action::make('mark_under_review')
+                    ->label(__('admin.orders.mark_under_review'))
+                    ->icon('heroicon-o-eye')
+                    ->visible(fn (Order $record) => $record->refund_status === 'requested'
+                        && AdminService::isAdmin(auth()->user()))
+                    ->action(fn (Order $record) => app(AdminService::class)
+                        ->markRefundUnderReview($record, auth()->user()))
+                    ->successNotificationTitle(__('admin.orders.marked_under_review')),
+                Action::make('approve_refund')
+                    ->label(__('admin.orders.approve_refund'))
+                    ->icon('heroicon-o-check')
+                    ->color('success')
+                    ->visible(fn (Order $record) => in_array($record->refund_status, ['requested', 'under_review'], true)
+                        && AdminService::isSuperAdmin(auth()->user()))
+                    ->action(function (Order $record) {
+                        app(BillingService::class)->refundOrder($record, auth()->user());
+                        AdminService::writeAudit(auth()->user(), 'refund.approved', 'orders', $record->getKey(), [
+                            'message' => 'Refund approved: '.$record->order_no,
+                        ]);
+                    })
+                    ->successNotificationTitle(__('admin.orders.refund_approved')),
+                Action::make('reject_refund')
+                    ->label(__('admin.orders.reject_refund'))
+                    ->icon('heroicon-o-x-mark')
+                    ->color('danger')
+                    ->visible(fn (Order $record) => in_array($record->refund_status, ['requested', 'under_review'], true)
+                        && AdminService::isSuperAdmin(auth()->user()))
+                    ->form([
+                        Textarea::make('note')->label(__('admin.orders.refund_note'))->rows(2),
+                    ])
+                    ->action(fn (Order $record, array $data) => app(AdminService::class)
+                        ->rejectRefund($record, auth()->user(), $data['note'] ?? null))
+                    ->successNotificationTitle(__('admin.orders.refund_rejected')),
                 ViewAction::make(),
             ]);
     }

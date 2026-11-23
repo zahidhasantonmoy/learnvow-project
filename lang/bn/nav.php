@@ -11,6 +11,7 @@ return [
     'library' => 'লাইব্রেরি',
     'wishlist' => 'উইশলিস্ট',
     'profile' => 'প্রোফাইল',
+    'notifications' => 'নোটিফিকেশন',
     'login' => 'লগইন',
     'register' => 'রেজিস্টার',
     'logout' => 'লগআউট',
@@ -18,5 +19,6 @@ return [
     'privacy' => 'গোপনীয়তা',
     'refund' => 'রিফান্ড নীতি',
     'copyright' => 'কপিরাইট',
+    'takedown' => 'টেকডাউন দাবি',
     'help' => 'সাহায্য',
 ];

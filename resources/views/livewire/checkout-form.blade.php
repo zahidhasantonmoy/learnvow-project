@@ -21,6 +21,15 @@
     @if($couponMessage)<p>{{ $couponMessage }}</p>@endif
   </div>
 
+  @if((auth()->user()->wallet_balance_bdt ?? 0) > 0)
+    <div>
+      <label>
+        <input type="checkbox" wire:model.live="useWallet">
+        {{ __('billing.wallet_use') }} ({{ __('billing.wallet_balance') }}: ৳{{ number_format((int) auth()->user()->wallet_balance_bdt) }})
+      </label>
+    </div>
+  @endif
+
   @if($priced['total_bdt'] > 0)
     <p>{{ __('billing.send_money_to') }}:
       @if($method === 'bkash')

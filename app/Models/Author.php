@@ -11,12 +11,15 @@ class Author extends Model
     protected $fillable = [
         'user_id', 'name', 'pen_name', 'slug', 'bio', 'bio_en', 'type',
         'revenue_share_pct', 'bkash_number', 'status',
+        // Phase 3 (§7.16).
+        'payout_method', 'bank_name', 'bank_account_number',
     ];
 
     protected function casts(): array
     {
         return [
             'bkash_number' => 'encrypted',
+            'bank_account_number' => 'encrypted',
         ];
     }
 

@@ -24,6 +24,11 @@ class DatabaseSeeder extends Seeder
             // Phase 2 — Builder B: plan, EID26, gift code, wallet/points,
             // demo orders, payments, subscription.
             BillingSeeder::class,
+            // Phase 3 (spec §8.5) — Builder B: demo author earnings + payout
+            // history + pool settings keys.
+            AuthorEarningsSeeder::class,
+            // Phase 3 (spec §8.5) — Builder C: the 5 historical audit rows.
+            AuditLogSeeder::class,
         ]);
     }
 }

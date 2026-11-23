@@ -24,9 +24,33 @@ class RolePermissionSeeder extends Seeder
         'authors.approve' => ['admin', 'super-admin'],
         'authors.reject' => ['admin', 'super-admin'],
         'users.manage' => ['admin', 'super-admin'],
-        'users.suspend' => ['admin', 'super-admin'],
+        // Phase 3 (spec §3.2, A17): suspend/ban is Super Admin ONLY — the
+        // Phase 1 seed wrongly gave users.suspend to Admin. UserPolicy was
+        // already Super Admin-only; the seed now matches the policy.
+        'users.suspend' => ['super-admin'],
         'categories.manage' => ['admin', 'super-admin'],
         'reviews.moderate' => ['admin', 'super-admin', 'support'],
+        // Phase 3 permissions (spec §12).
+        'authors.apply' => ['reader'],
+        'books.publish' => ['author'],
+        'books.edit_own' => ['author'],
+        'books.pause_own' => ['author'],
+        'earnings.view_own' => ['author'],
+        'payouts.request' => ['author'],
+        'payouts.approve' => ['super-admin'],
+        'payouts.release' => ['super-admin'],
+        'pool.manage' => ['super-admin'],
+        'tickets.manage' => ['admin', 'super-admin', 'support'],
+        'tickets.reply' => ['support', 'admin', 'super-admin'],
+        'reports.manage' => ['admin', 'super-admin', 'support'],
+        'takedowns.manage' => ['admin', 'super-admin'],
+        'announcements.manage' => ['admin', 'super-admin'],
+        'banners.manage' => ['admin', 'super-admin'],
+        'coupons.manage' => ['admin', 'super-admin'],
+        'faqs.manage' => ['admin', 'super-admin', 'support'],
+        'audit.view' => ['super-admin'],
+        'settings.manage' => ['super-admin'],
+        'backup.manage' => ['super-admin'],
         // roles.manage is deliberately super-admin ONLY (roles doc: only the
         // owner creates/removes admins and manages roles).
         'roles.manage' => ['super-admin'],

@@ -31,6 +31,7 @@
       @livewire('language-switcher')
       <x-theme-toggle />
       @auth
+        <a href="{{ route('notifications.index', ['locale' => app()->getLocale()]) }}" aria-label="{{ __('nav.notifications') }}">{{ __('nav.notifications') }}@php $unreadCount = auth()->user()->unreadNotifications()->count(); @endphp @if($unreadCount > 0) ({{ $unreadCount }})@endif</a>
         <a href="{{ route('profile.show', ['locale' => app()->getLocale()]) }}">{{ __('nav.profile') }}</a>
         <form method="POST" action="{{ route('logout', ['locale' => app()->getLocale()]) }}" style="display:inline">
           @csrf
@@ -57,6 +58,7 @@
       <a href="{{ route('pages.privacy', ['locale' => app()->getLocale()]) }}">{{ __('nav.privacy') }}</a> ·
       <a href="{{ route('pages.refund', ['locale' => app()->getLocale()]) }}">{{ __('nav.refund') }}</a> ·
       <a href="{{ route('pages.copyright', ['locale' => app()->getLocale()]) }}">{{ __('nav.copyright') }}</a> ·
+      <a href="{{ route('takedown.create', ['locale' => app()->getLocale()]) }}">{{ __('nav.takedown') }}</a> ·
       <a href="{{ route('pages.help', ['locale' => app()->getLocale()]) }}">{{ __('nav.help') }}</a>
     </p>
   </div>

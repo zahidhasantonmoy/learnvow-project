@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReviewResource\Pages;
+use App\Models\Report;
 use App\Models\Review;
 use App\Services\AdminService;
 use Filament\Forms\Components\Select;
@@ -13,8 +14,11 @@ use Filament\Schemas\Schema;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 
 /**
  * Builder C — adminModeration (spec §4.4). Reviews are written by readers
@@ -84,34 +88,67 @@ class ReviewResource extends BaseAdminResource
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->columns([
-                TextColumn::make('book.title')
-                    ->label(__('admin.reviews.book'))
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('user.name')
-                    ->label(__('admin.reviews.user'))
-                    ->sortable(),
-                TextColumn::make('rating')
-                    ->label(__('admin.reviews.rating'))
-                    ->sortable(),
-                TextColumn::make('status')
-                    ->label(__('admin.reviews.status'))
+        $columns = [
+            TextColumn::make('book.title')
+                ->label(__('admin.reviews.book'))
+                ->searchable()
+                ->sortable(),
+            TextColumn::make('user.name')
+                ->label(__('admin.reviews.user'))
+                ->sortable(),
+            TextColumn::make('rating')
+                ->label(__('admin.reviews.rating'))
+                ->sortable(),
+            TextColumn::make('status')
+                ->label(__('admin.reviews.status'))
+                ->badge()
+                ->color(fn (string $state) => $state === 'approved' ? 'success' : ($state === 'pending' ? 'warning' : 'danger'))
+                ->formatStateUsing(fn (string $state) => __('admin.status.'.$state))
+                ->sortable(),
+            TextColumn::make('created_at')
+                ->label(__('admin.reviews.created_at'))
+                ->dateTime()
+                ->sortable(),
+        ];
+
+        // Phase 3 (§5.1): reported reviews surface in the moderation
+        // queue — open-report count per review.
+        $filters = [
+            SelectFilter::make('status')
+                ->label(__('admin.reviews.status'))
+                ->options(static::statusOptions()),
+        ];
+
+        if (SchemaFacade::hasTable('reports')) {
+            array_splice($columns, 4, 0, [
+                TextColumn::make('open_reports')
+                    ->label(__('moderation.reports.reported_reviews'))
+                    ->state(fn (Review $record) => Report::query()
+                        ->where('reportable_type', Report::TYPE_REVIEW)
+                        ->where('reportable_id', $record->getKey())
+                        ->where('status', 'open')
+                        ->count())
                     ->badge()
-                    ->color(fn (string $state) => $state === 'approved' ? 'success' : ($state === 'pending' ? 'warning' : 'danger'))
-                    ->formatStateUsing(fn (string $state) => __('admin.status.'.$state))
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->label(__('admin.reviews.created_at'))
-                    ->dateTime()
-                    ->sortable(),
-            ])
-            ->filters([
-                SelectFilter::make('status')
-                    ->label(__('admin.reviews.status'))
-                    ->options(static::statusOptions()),
-            ])
+                    ->color(fn (Review $record) => Report::query()
+                        ->where('reportable_type', Report::TYPE_REVIEW)
+                        ->where('reportable_id', $record->getKey())
+                        ->where('status', 'open')
+                        ->exists() ? 'danger' : 'gray'),
+            ]);
+
+            $filters[] = Filter::make('reported_only')
+                ->label(__('moderation.reports.reported_reviews'))
+                ->query(fn (Builder $query) => $query->whereExists(function ($q) {
+                    $q->selectRaw('1')->from('reports')
+                        ->whereColumn('reports.reportable_id', 'reviews.id')
+                        ->where('reports.reportable_type', Report::TYPE_REVIEW)
+                        ->where('reports.status', 'open');
+                }));
+        }
+
+        return $table
+            ->columns($columns)
+            ->filters($filters)
             ->actions([
                 Action::make('approve')
                     ->label(__('admin.actions.approve'))

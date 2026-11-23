@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Coupon extends Model
 {
-    protected $fillable = ['code', 'percent', 'applies_to', 'starts_at', 'ends_at', 'max_uses', 'max_uses_per_user', 'used_count', 'is_active'];
+    protected $fillable = ['code', 'percent', 'applies_to', 'starts_at', 'ends_at', 'max_uses', 'max_uses_per_user', 'used_count', 'is_active', 'author_id', 'book_id'];
 
     protected function casts(): array
     {

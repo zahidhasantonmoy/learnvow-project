@@ -11,6 +11,7 @@ return [
     'library' => 'Library',
     'wishlist' => 'Wishlist',
     'profile' => 'Profile',
+    'notifications' => 'Notifications',
     'login' => 'Login',
     'register' => 'Register',
     'logout' => 'Logout',
@@ -18,5 +19,6 @@ return [
     'privacy' => 'Privacy',
     'refund' => 'Refund Policy',
     'copyright' => 'Copyright',
+    'takedown' => 'Takedown claim',
     'help' => 'Help',
 ];

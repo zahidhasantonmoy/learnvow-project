@@ -190,6 +190,18 @@ class BookResource extends BaseAdminResource
                     ->requiresConfirmation()
                     ->action(fn (Book $record) => app(AdminService::class)->approveBook($record, auth()->user()))
                     ->successNotificationTitle(__('admin.actions.approved')),
+                Action::make('restore')
+                    ->label(__('admin.actions.restore'))
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('success')
+                    // M2: a taken-down book is restored by approving it again
+                    // (AdminService::approveBook accepts taken_down → published,
+                    // audited as book.approved). Without this the row only
+                    // offers View/Edit after a takedown decision.
+                    ->visible(fn (Book $record) => $record->status === 'taken_down')
+                    ->requiresConfirmation()
+                    ->action(fn (Book $record) => app(AdminService::class)->approveBook($record, auth()->user()))
+                    ->successNotificationTitle(__('admin.actions.approved')),
                 Action::make('reject')
                     ->label(__('admin.actions.reject'))
                     ->icon('heroicon-o-x-mark')

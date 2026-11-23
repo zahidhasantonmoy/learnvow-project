@@ -17,6 +17,7 @@ use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\UserBook;
 use App\Models\WalletTransaction;
+use App\Notifications\AuthorNotification;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -273,6 +274,13 @@ class BillingService
 
             if ($priced['total_bdt'] === 0) {
                 $this->grantAccess($order, null);
+
+                // Phase 3 (§2.1): a wallet-covered ৳0 order is paid HERE —
+                // it never passes through verifyPayment(), so without this
+                // call the author would earn nothing on it. Wallet money
+                // is real money (top-up already happened). accrueSale()
+                // is idempotent, so a later verifyPayment cannot double it.
+                (new PayoutService)->accrueSale($order->fresh());
             }
 
             return $order->fresh();
@@ -380,6 +388,19 @@ class BillingService
 
             $this->grantAccess($order, $payment);
             $this->logEvent($payment, 'access_granted', $admin->id);
+
+            // Phase 3 §2.1: a paid order accrues the author's 80% — only
+            // now, never before verification. No book items (premium /
+            // wallet top-up) accrue nothing; ৳0 orders never reach here.
+            (new PayoutService)->accrueSale($order->fresh());
+
+            // Phase 3 §6: the buyer is told their TrxID was verified and
+            // the order is live. No TrxID in the notification itself.
+            if (Schema::hasTable('notifications') && $order->user !== null) {
+                $order->user->notify(new AuthorNotification('order_live', [
+                    'order_id' => $order->id, 'order_no' => $order->order_no,
+                ]));
+            }
         });
     }
 
@@ -459,6 +480,11 @@ class BillingService
             }
 
             $order->update(['status' => 'refunded', 'refund_status' => 'approved']);
+
+            // Phase 3 §2.1 (A3): the author's sale earnings reverse as a
+            // negative adjustment. The buyer's access is UNCHANGED —
+            // reverseSaleEarnings() never touches user_books.
+            (new PayoutService)->reverseSaleEarnings($order->fresh());
 
             // payment_events.payment_id is NOT nullable (migration
             // 2026_11_22_210006), so a payment-less order (e.g. ৳0)
