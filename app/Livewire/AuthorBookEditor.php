@@ -34,8 +34,10 @@ class AuthorBookEditor extends Component
         $this->error = null;
         $this->notice = null;
         $this->validate([
-            'priceBdt' => 'required|integer|min:0',
-            'listPriceBdt' => 'nullable|integer|min:0',
+            // EB-09: sane upper bound, and the list price must never be
+            // below the sale price (a "discount" that costs more).
+            'priceBdt' => 'required|integer|min:0|max:100000',
+            'listPriceBdt' => 'nullable|integer|min:0|max:100000|gte:priceBdt',
             'titleEn' => 'nullable|string|max:255',
             'description' => 'required|string|max:10000',
             'descriptionEn' => 'nullable|string|max:10000',
@@ -43,6 +45,8 @@ class AuthorBookEditor extends Component
             // Round 3: novalidate lets Livewire run, so the required
             // errors must be localized, not Laravel's English defaults.
             'priceBdt.required' => __('author.edit_price_required'),
+            'priceBdt.max' => __('author.edit_price_max'),
+            'listPriceBdt.gte' => __('author.edit_list_price_gte'),
             'description.required' => __('author.edit_description_required'),
         ]);
 

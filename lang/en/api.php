@@ -8,6 +8,7 @@ return [
     'cannot_read' => 'You do not have access to read this book.',
     'book_required' => 'Choose a book.',
     'author_cannot_buy_own' => 'An author cannot buy their own book.',
+    'already_own_book' => 'You already own this book.',
     'already_premium' => 'Premium is already active on your account.',
     'collections_limit' => 'You can create at most 20 shelves.',
     'collection_name_taken' => 'A shelf with this name already exists.',
@@ -18,4 +19,5 @@ return [
     'vocabulary_unavailable' => 'Vocabulary is not available yet.',
     'print_unavailable' => 'Print orders are not available yet.',
     'recommended_popular' => 'Popular books',
+    'not_found' => 'Not found.',
 ];

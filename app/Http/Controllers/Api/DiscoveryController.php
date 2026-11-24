@@ -26,6 +26,8 @@ class DiscoveryController extends ApiController
         $popular = Book::published()->orderByDesc('sales_count')->orderByDesc('ratings_count')
             ->limit($limit)->get();
 
+        $books->preloadOwnedBooks($user);
+
         return $this->ok($popular->map(fn (Book $book) => array_merge(
             $this->bookArray($book, $books->canRead($user, $book)),
             ['reason' => __('api.recommended_popular')]

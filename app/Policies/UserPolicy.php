@@ -13,6 +13,12 @@ class UserPolicy
 
     public function view(User $user, User $target): bool
     {
+        // ADM-02: an Admin may never open the Super Admin's record —
+        // only the Super Admin themself (or another Super Admin) may.
+        if ($target->hasRole('super-admin') && ! $user->hasRole('super-admin')) {
+            return $user->id === $target->id;
+        }
+
         return $user->id === $target->id || $user->hasAnyRole(['admin', 'super-admin']);
     }
 
@@ -22,11 +28,23 @@ class UserPolicy
      */
     public function manage(User $user, User $target): bool
     {
+        // ADM-02: see view() — the Super Admin's record is off-limits
+        // to plain Admins.
+        if ($target->hasRole('super-admin') && ! $user->hasRole('super-admin')) {
+            return false;
+        }
+
         return $user->hasAnyRole(['admin', 'super-admin']);
     }
 
     public function update(User $user, User $target): bool
     {
+        // ADM-02: an Admin may never edit (or save) the Super Admin's
+        // record — only the Super Admin themself may.
+        if ($target->hasRole('super-admin') && ! $user->hasRole('super-admin')) {
+            return $user->id === $target->id;
+        }
+
         return $user->id === $target->id || $user->hasAnyRole(['admin', 'super-admin']);
     }
 

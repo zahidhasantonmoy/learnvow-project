@@ -10,6 +10,9 @@
       @foreach($userBooks as $userBook)
         <div>
           <x-book-card :book="$userBook->book" />
+          {{-- UI-02: library cards link only to the detail page — give
+               owned books a direct path into the reader. --}}
+          <p><a class="btn" href="{{ route('reader.show', ['locale' => app()->getLocale(), 'book' => $userBook->book->slug]) }}">{{ __('books.read_now') }}</a></p>
           @if(in_array($userBook->book->id, $finishedBookIds ?? [], true))
             <span class="badge">{{ __('reader.finished_badge') }}</span>
           @endif

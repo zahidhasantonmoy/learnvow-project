@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('content')
   <h1 class="serif">{{ __('wallet.title') }}</h1>
+  <div class="card">
   <p>{{ __('wallet.balance') }}: <strong>৳{{ $user->wallet_balance_bdt }}</strong></p>
   @if($referralCredit > 0)
     <p>{{ __('wallet.referral_credit', ['amount' => $referralCredit]) }}</p>
@@ -18,4 +19,5 @@
     </ul>
     {{ $transactions->links() }}
   @endif
+  </div>
 @endsection

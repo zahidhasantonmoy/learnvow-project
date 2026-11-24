@@ -2,7 +2,7 @@
 
 @section('content')
   <div style="display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:0 0 220px;max-width:220px">
+    <div class="book-detail-cover" style="flex:0 0 220px;max-width:220px">
       <x-cover :book="$book" />
     </div>
     <div style="flex:1;min-width:260px">
@@ -30,6 +30,17 @@
         </p>
       @endif
       <p>
+        {{-- UI-01/UI-02: the core Buy / Read CTAs. Read when the user can
+             read the book (owned / Premium / free); Buy when it is a
+             purchasable published book they do not own yet. The author's
+             own book never shows Buy (checkout refuses it anyway). --}}
+        @if($canRead)
+          <a class="btn" href="{{ route('reader.show', ['locale' => app()->getLocale(), 'book' => $book->slug]) }}">{{ __('books.read_now') }}</a>
+        @elseif($book->is_free && $book->status === 'published')
+          <a class="btn" href="{{ route('reader.show', ['locale' => app()->getLocale(), 'book' => $book->slug]) }}">{{ __('books.read_now') }}</a>
+        @elseif($book->status === 'published' && ! $book->is_paused && ! (auth()->check() && $book->author && (int) $book->author->user_id === (int) auth()->id()))
+          <a class="btn" href="{{ route('checkout.book', ['locale' => app()->getLocale(), 'book' => $book->slug]) }}">{{ __('books.buy_now', ['price' => number_format($book->price_bdt)]) }}</a>
+        @endif
         <a class="btn" href="{{ route('books.sample', ['locale' => app()->getLocale(), 'slug' => $book->slug]) }}">{{ __('books.read_sample') }}</a>
         @auth
           @livewire('wishlist-button', ['book' => $book, 'inWishlist' => $inWishlist])

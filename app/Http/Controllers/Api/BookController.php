@@ -21,6 +21,7 @@ class BookController extends ApiController
         ]);
 
         $user = $request->user();
+        $books->preloadOwnedBooks($user);
         $items = $page->getCollection()->map(
             fn (Book $book) => $this->bookArray($book, $books->canRead($user, $book))
         )->values();
@@ -53,6 +54,7 @@ class BookController extends ApiController
         $query = (string) $request->query('q', '');
         $found = $books->search($query);
         $user = $request->user();
+        $books->preloadOwnedBooks($user);
 
         return $this->ok($found->map(
             fn (Book $book) => $this->bookArray($book, $books->canRead($user, $book))

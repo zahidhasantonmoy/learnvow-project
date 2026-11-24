@@ -18,17 +18,22 @@ class PrintOrderController extends Controller
     /** Order form (Livewire PrintOrderForm renders the price + fields). */
     public function create(string $locale, Book $book, PrintService $prints)
     {
+        // UI-04: these failures used to `back()` — which landed the user
+        // on whatever page they came from (clubs, wallet, support chat…).
+        // Always land back on the book page with the message instead.
+        $bookUrl = redirect()->route('books.show', ['locale' => $locale, 'slug' => $book->slug]);
+
         if (! $book->allow_pod || $book->status !== 'published' || $book->is_paused) {
             // The layout renders only session('status') — withErrors alone
             // is invisible to the user (QA M5 pattern, cf. LicensedPdfController).
-            return back()->withErrors(['book' => __('print.not_available')])
+            return $bookUrl->withErrors(['book' => __('print.not_available')])
                 ->with('status', __('print.not_available'));
         }
 
         try {
             $priced = $prints->priceOrder($book, 1);
         } catch (InvalidArgumentException) {
-            return back()->withErrors(['book' => __('print.price_not_set')])
+            return $bookUrl->withErrors(['book' => __('print.price_not_set')])
                 ->with('status', __('print.price_not_set'));
         }
 
@@ -63,6 +68,14 @@ class PrintOrderController extends Controller
 
     public function index(string $locale)
     {
+        // AUD3-06: "my print orders" is a buyer page. A print partner
+        // (who has no reader role) used to open it and see an empty
+        // state; their orders live on the partner dashboard instead.
+        abort_if(
+            auth()->user()->hasRole('print-partner') && ! auth()->user()->hasRole('reader'),
+            403
+        );
+
         $orders = PrintOrder::where('user_id', auth()->id())
             ->with('book')->latest()->paginate(12);
 

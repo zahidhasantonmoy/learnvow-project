@@ -136,9 +136,14 @@ class DeviceService
 
     public function webDeviceName(?string $userAgent): string
     {
+        // UI-12: the name used to be "$platform — Web" while the blade
+        // also printed device_type ("web") and platform ("Chrome —
+        // Linux") — rendering "Chrome — Linux — Web web Chrome — Linux".
+        // The name is just the platform now; the type is shown once
+        // by the devices list itself.
         $platform = $this->platformFromUserAgent($userAgent);
 
-        return $platform !== '' ? $platform.' — Web' : 'Web browser';
+        return $platform !== '' ? $platform : 'Web browser';
     }
 
     public function platformFromUserAgent(?string $userAgent): string

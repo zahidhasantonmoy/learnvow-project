@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CouponResource\Pages;
 use App\Models\Coupon;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DateTimePicker;
@@ -173,6 +174,7 @@ class CouponResource extends BaseAdminResource
             ])
             ->actions([
                 EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 

@@ -214,6 +214,26 @@ class ModerationFlowTest extends TestCase
         $this->assertSame(2, $ticket->messages()->count());
     }
 
+    public function test_support_chat_index_shows_open_queue_for_support(): void
+    {
+        // AUD3-05: support staff previously saw only "my tickets" on web
+        // and had to know a ticket's URL to work it. The queue lists
+        // every open ticket; a reader still sees only their own.
+        $ticket = $this->makeTicket($this->reader);
+
+        $this->actingAs($this->support)
+            ->get('bn/support/chat')
+            ->assertOk()
+            ->assertSee(__('support.tickets.queue'))
+            ->assertSee($ticket->subject);
+
+        $other = User::factory()->create();
+        $this->actingAs($other)
+            ->get('bn/support/chat')
+            ->assertOk()
+            ->assertDontSee($ticket->subject);
+    }
+
     // ---- Filament report actions (§5.2) ----
 
     public function test_filament_hide_book_action_and_admin_dismiss(): void

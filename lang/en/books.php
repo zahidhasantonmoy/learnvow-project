@@ -35,6 +35,8 @@ return [
     'has_audiobook' => 'Audiobook available',
     'public_domain' => 'Public domain',
     'read_sample' => 'Read sample',
+    'buy_now' => 'Buy now — ৳:price',
+    'read_now' => 'Read now',
     'sample_title' => ':title — Sample',
     'sample_percent' => 'Sample: :percent%',
     'sample_login_wall' => 'Log in to read the sample — it is free.',

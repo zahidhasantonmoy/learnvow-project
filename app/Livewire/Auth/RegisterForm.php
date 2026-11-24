@@ -3,7 +3,6 @@
 namespace App\Livewire\Auth;
 
 use App\Services\AuthService;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class RegisterForm extends Component
@@ -37,10 +36,19 @@ class RegisterForm extends Component
 
         $user = $auth->register($validated);
 
-        Auth::login($user);
-        session()->regenerate();
+        // N1 (re-QA 2026-11-24): do NOT log the user in here. The OTP
+        // page lives under `guest` middleware, so a logged-in user is
+        // bounced home and the OTP step was unreachable — new accounts
+        // ended up fully usable with phone_verified_at NULL. The user
+        // stays a guest until the code is verified; OtpForm::verify()
+        // logs them in after a correct code.
 
-        // New accounts verify their phone by OTP next.
+        // New accounts verify their phone by OTP next. Issue the code
+        // now (SEC-01: previously no code was ever issued for this flow,
+        // so the OTP page had nothing to verify against).
+        $code = $auth->requestOtp($user->phone, AuthService::OTP_PURPOSE_VERIFY);
+        AuthService::rememberDevCode($code);
+
         session(['otp_phone' => $user->phone]);
 
         return redirect()->route('otp', ['locale' => $this->locale]);

@@ -10,6 +10,7 @@
       <p>{{ __('author.support_thread_unavailable') }}</p>
     @endif
   @else
+    <h2 class="serif">{{ ($isQueue ?? false) ? __('support.tickets.queue') : __('support.tickets.my_tickets') }}</h2>
     @if(isset($tickets) && $tickets->count() > 0)
       <ul>
         @foreach($tickets as $t)

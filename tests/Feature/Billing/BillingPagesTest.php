@@ -110,6 +110,36 @@ class BillingPagesTest extends TestCase
         }
     }
 
+    public function test_premium_user_can_open_checkout_to_buy_separately(): void
+    {
+        // AUD3-07 / X5: Premium lets the user READ the book, but it is
+        // not ownership — the checkout page must open so they can buy
+        // permanent ownership. (Before the fix, canRead() redirected
+        // every Premium user away from checkout.)
+        $plan = SubscriptionPlan::where('slug', 'premium-monthly')->firstOrFail();
+        \App\Models\Subscription::create([
+            'user_id' => $this->reader->id, 'plan_id' => $plan->id,
+            'status' => 'active', 'starts_at' => now(), 'ends_at' => now()->addDays(30),
+        ]);
+
+        $this->actingAs($this->reader);
+        $this->get('/bn/checkout/the-prophet')->assertOk();
+    }
+
+    public function test_purchased_book_checkout_redirects_to_book_page(): void
+    {
+        // A book owned via PURCHASE still blocks re-buying.
+        \App\Models\UserBook::create([
+            'user_id' => $this->reader->id,
+            'book_id' => Book::where('slug', 'the-prophet')->firstOrFail()->id,
+            'source' => 'purchase',
+        ]);
+
+        $this->actingAs($this->reader);
+        $this->get('/bn/checkout/the-prophet')
+            ->assertRedirect('/bn/books/the-prophet');
+    }
+
     public function test_gift_redeem_is_visible_to_guests(): void
     {
         $this->get('/bn/gift/redeem')->assertOk();

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SupportFaqResource\Pages;
 use App\Models\Faq;
 use App\Services\AdminService;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Textarea;
@@ -110,6 +111,7 @@ class SupportFaqResource extends BaseAdminResource
             ])
             ->actions([
                 EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 

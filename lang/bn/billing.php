@@ -49,6 +49,8 @@ return [
     'payment_number_not_set' => 'পেমেন্ট নম্বর এখনো সেট হয়নি — মালিকের সঙ্গে যোগাযোগ করুন।',
     'order_created_submit_trxid' => 'অর্ডার তৈরি হয়েছে — এবার TrxID জমা দিন।',
     'trxid_submitted' => 'TrxID জমা হয়েছে। যাচাই হলে অ্যাক্সেস চালু হবে।',
+    'trxid_invalid' => 'TrxID-এর ফরম্যাট ঠিক নয়।',
+    'gift_code_not_found' => 'গিফট কোড পাওয়া যায়নি।',
     'author_cannot_buy_own' => 'লেখক নিজের বই কিনতে পারবেন না।',
     'already_own_book' => 'এই বইটি আপনার আগেই আছে।',
     'already_premium' => 'আপনার Premium আগেই চালু আছে।',
@@ -59,6 +61,7 @@ return [
     'fix_count' => 'ঠিক করা হয়েছে: :count/৩ বার',
     'fix_limit_reached' => '৩ বার ঠিক করা হয়ে গেছে — সাপোর্টে যোগাযোগ করুন।',
     'fix_trxid_submit' => 'নতুন TrxID জমা দিন',
+    'trxid_not_correctable' => 'এই অর্ডারটি ইতিমধ্যে পরিশোধিত — TrxID আর ঠিক করা যাবে না।',
 
     // Payment hub / orders
     'payment_title' => 'পেমেন্ট',

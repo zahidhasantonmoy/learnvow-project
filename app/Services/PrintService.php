@@ -63,7 +63,10 @@ class PrintService
             : $this->settingIntOrNull('print.base_price_bdt');
 
         if ($unit === null) {
-            throw new InvalidArgumentException('Print price has not been set yet.');
+            // N4 (re-QA 2026-11-24): was hardcoded English on BN pages.
+            // Reuses the existing print.price_not_set string (already
+            // translated BN/EN), matching the print-order page message.
+            throw new InvalidArgumentException(__('print.price_not_set'));
         }
 
         $delivery = $this->settingIntOrNull('print.delivery_charge_bdt') ?? 0;
@@ -161,7 +164,7 @@ class PrintService
         }
 
         if (! BillingService::isValidTrxId($trxId)) {
-            throw new InvalidArgumentException('TrxID format is invalid.');
+            throw new InvalidArgumentException(__('billing.trxid_invalid'));
         }
 
         $order->update([

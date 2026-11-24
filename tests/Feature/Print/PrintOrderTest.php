@@ -257,4 +257,40 @@ class PrintOrderTest extends PrintTestCase
             ->assertSessionHas('status', 'দাম এখনো নির্ধারণ হয়নি — পরে আবার চেষ্টা করুন।')
             ->assertSessionHasErrors('book');
     }
+
+    public function test_print_copies_unset_price_error_is_bengali(): void
+    {
+        // N4 (re-QA 2026-11-24): the print-price error on the BN
+        // author print-copies page was hardcoded English
+        // ("Print price has not been set yet."). It must now render the
+        // translated print.price_not_set string.
+        $this->prophet->update(['print_price_bdt' => null]);
+        if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+            \Illuminate\Support\Facades\DB::table('settings')
+                ->where('key', 'print.base_price_bdt')->delete();
+        }
+
+        $this->actingAs($this->authorUser)
+            ->post('/bn/author/print-copies', [
+                'book_id' => $this->prophet->id,
+                'quantity' => 1,
+                'delivery_name' => 'AUDQA Test',
+                'delivery_phone' => '01700000003',
+                'delivery_address' => 'Dhaka',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors(['book' => 'দাম এখনো নির্ধারণ হয়নি — পরে আবার চেষ্টা করুন।']);
+    }
+
+    public function test_print_pages_forbid_the_wrong_role(): void
+    {
+        // AUD3-06: support used to open /bn/print-partner and the partner
+        // used to open /bn/print-orders (empty states, no leak) — both
+        // are now 403; each role's own page still loads.
+        $this->actingAs($this->support)->get('/bn/print-partner')->assertForbidden();
+        $this->actingAs($this->partner)->get('/bn/print-orders')->assertForbidden();
+
+        $this->actingAs($this->partner)->get('/bn/print-partner')->assertOk();
+        $this->actingAs($this->reader)->get('/bn/print-orders')->assertOk();
+    }
 }

@@ -35,6 +35,8 @@ return [
     'has_audiobook' => 'অডিওবুক আছে',
     'public_domain' => 'পাবলিক ডোমেইন',
     'read_sample' => 'নমুনা পড়ুন',
+    'buy_now' => 'এখনই কিনুন — ৳:price',
+    'read_now' => 'এখনই পড়ুন',
     'sample_title' => ':title — নমুনা',
     'sample_percent' => 'নমুনা: :percent%',
     'sample_login_wall' => 'নমুনা পড়তে লগইন করুন — এটি ফ্রি।',

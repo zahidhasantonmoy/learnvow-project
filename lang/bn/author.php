@@ -51,6 +51,8 @@ return [
     'publish_file_required' => 'বইয়ের ফাইল আপলোড করতে হবে।',
     'audio_file_required' => 'অডিও ফাইল আপলোড করতে হবে।',
     'edit_price_required' => 'মূল্য দিতে হবে।',
+    'edit_price_max' => 'মূল্য সর্বোচ্চ ৳১,০০,০০০ হতে পারে।',
+    'edit_list_price_gte' => 'তালিকা মূল্য বিক্রয় মূল্যের চেয়ে কম হতে পারবে না।',
     'edit_description_required' => 'বিবরণ দিতে হবে।',
 
     // Dashboard (§1.2)

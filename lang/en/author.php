@@ -50,6 +50,8 @@ return [
     'publish_file_required' => 'Please upload the book file.',
     'audio_file_required' => 'Please upload an audio file.',
     'edit_price_required' => 'Please enter a price.',
+    'edit_price_max' => 'The price must be at most ৳100,000.',
+    'edit_list_price_gte' => 'The list price must be at least the sale price.',
     'edit_description_required' => 'Please enter a description.',
 
     // Dashboard (§1.2)

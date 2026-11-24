@@ -215,6 +215,31 @@ class UserResource extends BaseAdminResource
             ]);
     }
 
+    /**
+     * ADM-02: an Admin may never open or edit the Super Admin's record
+     * (view or edit page). Only the Super Admin themself may. This
+     * overrides the base resource check, which only asked "is admin?".
+     */
+    public static function getEditAuthorizationResponse(\Illuminate\Database\Eloquent\Model $record): \Illuminate\Auth\Access\Response
+    {
+        if ($record instanceof User && AdminService::userHasRole($record, 'super-admin')
+            && ! AdminService::isSuperAdmin(static::currentUser())) {
+            return static::allowOrDeny(false);
+        }
+
+        return parent::getEditAuthorizationResponse($record);
+    }
+
+    public static function getViewAuthorizationResponse(\Illuminate\Database\Eloquent\Model $record): \Illuminate\Auth\Access\Response
+    {
+        if ($record instanceof User && AdminService::userHasRole($record, 'super-admin')
+            && ! AdminService::isSuperAdmin(static::currentUser())) {
+            return static::allowOrDeny(false);
+        }
+
+        return parent::getViewAuthorizationResponse($record);
+    }
+
     public static function getPages(): array
     {
         return [

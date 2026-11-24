@@ -261,8 +261,10 @@ class CommunityService
     {
         $myClubIds = ClubMember::where('user_id', $user->id)->pluck('club_id');
 
+        // PERF-02: the clubs index must not load every public club —
+        // cap it like the other lists (50).
         return Club::where('is_public', true)
             ->orWhereIn('id', $myClubIds)
-            ->withCount('members')->latest()->get();
+            ->withCount('members')->latest()->limit(50)->get();
     }
 }
