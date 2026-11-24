@@ -88,16 +88,17 @@ class ReviewReplyPromoSettingsTest extends AuthorTestCase
             ->assertDontSee('Pending review body.');
     }
 
-    public function test_promo_blocked_until_super_admin_sets_limits(): void
+    public function test_promo_allowed_when_super_admin_sets_no_limits(): void
     {
+        // Phase 4 §10 / decision 4 (K1): no limits set means NO limit —
+        // the Phase 3 rule (blocked until limits set) is superseded.
         $service = app(AuthorService::class);
-        $this->assertFalse($service->canCreatePromo());
+        $this->assertTrue($service->canCreatePromo());
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessageMatches('/not set promo limits/');
-        $service->createPromo($this->author, [
+        $coupon = $service->createPromo($this->author, [
             'book_id' => $this->ownBook->id, 'percent' => 10, 'duration_days' => 7,
         ]);
+        $this->assertSame(10, $coupon->percent);
 
         // The promos page says so, with no hardcoded limit anywhere.
         $this->actingAuthor()

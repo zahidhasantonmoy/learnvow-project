@@ -50,11 +50,11 @@ class RolePolicyTest extends TestCase
 
     // --- Seeders -------------------------------------------------------
 
-    // Phase 3 (spec §12): 10 Phase 1 + 20 Phase 3 permissions = 30.
-    public function test_six_roles_and_thirty_permissions_are_seeded(): void
+    // Phase 4 (spec §17): 30 Phase 1–3 + 19 Phase 4 permissions = 49.
+    public function test_six_roles_and_forty_nine_permissions_are_seeded(): void
     {
         $this->assertSame(6, \Spatie\Permission\Models\Role::count());
-        $this->assertSame(30, \Spatie\Permission\Models\Permission::count());
+        $this->assertSame(49, \Spatie\Permission\Models\Permission::count());
         $this->assertNull(\Spatie\Permission\Models\Role::where('name', 'guest')->first());
     }
 

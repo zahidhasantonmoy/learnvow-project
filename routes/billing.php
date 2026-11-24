@@ -27,6 +27,9 @@ Route::get('/gift/redeem', [GiftController::class, 'redeem'])->name('gift.redeem
 
 Route::middleware('auth')->group(function () {
     Route::get('/premium', [PremiumController::class, 'index'])->name('premium.index');
+    // Phase 4 (§14.6): international plan ৳199 — manual TrxID only.
+    Route::get('/premium/international', [PremiumController::class, 'international'])->name('premium.international');
+    Route::get('/checkout/premium/international', [CheckoutController::class, 'international'])->name('checkout.premium.international');
     Route::get('/subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
     Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 

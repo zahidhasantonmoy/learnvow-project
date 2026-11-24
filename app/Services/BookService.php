@@ -174,7 +174,43 @@ class BookService
             return false;
         }
 
+        // Phase 4 §3.2 — rights territories: Premium-only. Bought books
+        // are already exempt above; an empty user country never blocks.
+        if (! $this->territoryAllows($user, $book)) {
+            return false;
+        }
+
         return $this->hasActivePremium($user);
+    }
+
+    /**
+     * Phase 4 §3.2 — is this user's country inside the book's
+     * rights_territories? Empty territories = everywhere; empty user
+     * country = no block (never inferred from IP).
+     */
+    public function territoryAllows(User $user, Book $book): bool
+    {
+        $territories = $book->rights_territories ?? [];
+
+        if ($territories === []) {
+            return true;
+        }
+
+        if (empty($user->country)) {
+            return true;
+        }
+
+        return in_array($user->country, $territories, true);
+    }
+
+    /**
+     * Phase 4 §4.3 — base "For You" candidate query for a user:
+     * published + visible, never the user's own books, never books
+     * already read. RecommendationService applies the rules on top.
+     */
+    public function forYouQuery(User $user)
+    {
+        return app(\App\Services\RecommendationService::class)->candidates($user);
     }
 
     /** Premium trialing/active and not past its end (spec §2.2). */

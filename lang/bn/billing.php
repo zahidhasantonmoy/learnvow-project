@@ -22,6 +22,11 @@ return [
     'cancel_subscription' => 'সাবস্ক্রিপশন বাতিল করুন',
     'cancel_note' => 'বাতিল করলে বর্তমান মেয়াদের শেষ পর্যন্ত Premium চলবে; টাকা ফেরত হবে না।',
 
+    // International (Phase 4, §3.1)
+    'intl_title' => 'LearnVow Premium International',
+    'intl_subtitle' => 'দেশের বাইরের পাঠকদের জন্য Premium — সব বই, এক সাবস্ক্রিপশনে।',
+    'intl_payment_note' => 'আন্তর্জাতিক পেমেন্ট শীঘ্রই আসছে — আপাতত ম্যানুয়াল TrxID।',
+
     // Checkout
     'checkout_title' => 'চেকআউট',
     'subtotal' => 'মোট (ছাড়ের আগে)',

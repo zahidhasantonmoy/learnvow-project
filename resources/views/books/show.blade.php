@@ -33,8 +33,37 @@
         <a class="btn" href="{{ route('books.sample', ['locale' => app()->getLocale(), 'slug' => $book->slug]) }}">{{ __('books.read_sample') }}</a>
         @auth
           @livewire('wishlist-button', ['book' => $book, 'inWishlist' => $inWishlist])
+          {{-- Phase 4 §4.2 — add to a shelf (collections). --}}
+          @php $myCollections = \App\Models\Collection::where('user_id', auth()->id())->orderBy('name')->get(); @endphp
+          @if($myCollections->isNotEmpty())
+            <form method="POST" action="{{ route('collections.books.add', ['locale' => app()->getLocale(), 'collection' => $myCollections->first()->id, 'book' => $book->slug]) }}" style="display:inline" id="add-to-collection-form">
+              @csrf
+              <label>{{ __('books.collections_add_to') }}
+                <select name="collection_id" onchange="this.form.action = this.form.action.replace(/collections\/\d+/, 'collections/' + this.value)">
+                  @foreach($myCollections as $collection)
+                    <option value="{{ $collection->id }}">{{ $collection->name }}</option>
+                  @endforeach
+                </select>
+              </label>
+              <button type="submit" class="btn">{{ __('books.collections_add_to') }}</button>
+            </form>
+          @else
+            <a class="btn" href="{{ route('collections.index', ['locale' => app()->getLocale()]) }}">{{ __('books.collections_none_yet') }}</a>
+          @endif
         @endauth
       </p>
+      {{-- Phase 4 §2.1 / §4.8 (QA M3): print order + pre-order were
+           undiscoverable — no view linked them. Print link only when
+           the reader can actually order (mirrors PrintOrderController);
+           the price itself stays unset by design (Super Admin sets it). --}}
+      @if($book->allow_pod && $book->status === 'published' && ! $book->is_paused)
+        <p><a class="btn" href="{{ route('print-orders.create', ['locale' => app()->getLocale(), 'book' => $book->slug]) }}">{{ __('print.order_title') }}</a></p>
+      @endif
+      @auth
+        @if(app(\App\Http\Controllers\PreorderController::class)->isPreorderable($book))
+          @livewire('preorder-button', ['book' => $book])
+        @endif
+      @endauth
       @auth
         <details>
           <summary>{{ __('moderation.reports.report_book') }}</summary>

@@ -6,6 +6,7 @@ use App\Models\Author;
 use App\Models\AuthorEarning;
 use App\Models\AuthorPayout;
 use App\Models\Order;
+use App\Models\PrintOrder;
 use App\Models\ReadingMinute;
 use App\Models\ReadingProgress;
 use App\Models\User;
@@ -135,6 +136,59 @@ class PayoutService
                 ]);
             }
         });
+    }
+
+    /**
+     * Accrue the author's share on a DELIVERED print order (Phase 4
+     * spec §2.3): first the partner cost, then 80% of what remains.
+     * Worked example: price ৳454, partner cost ৳200 → (454 − 200) × 80%
+     * = ৳203 (int, round). type=sale, NOT pool. Idempotent.
+     *
+     * Accrues nothing when: the order is not delivered, it is the
+     * author's own copy (ordered_by_author), the partner cost is still
+     * unknown (spec A4), or price − cost is ≤ 0.
+     */
+    public function accruePrintSale(PrintOrder $order): void
+    {
+        if ($order->status !== PrintOrder::STATUS_DELIVERED) {
+            return;
+        }
+
+        if ($order->ordered_by_author) {
+            return;
+        }
+
+        if ($order->partner_cost_bdt === null) {
+            return;
+        }
+
+        $remaining = (int) $order->total_bdt - (int) $order->partner_cost_bdt;
+
+        if ($remaining <= 0) {
+            return;
+        }
+
+        $note = 'print order '.$order->order_no;
+
+        if (AuthorEarning::where('note', $note)->where('type', AuthorEarning::TYPE_SALE)->exists()) {
+            return;
+        }
+
+        $author = Author::find($order->author_id);
+        $sharePct = $author !== null && $author->revenue_share_pct !== null
+            ? (int) $author->revenue_share_pct
+            : $this->sharePct();
+
+        AuthorEarning::create([
+            'author_id' => $order->author_id,
+            'book_id' => $order->book_id,
+            'order_id' => null,
+            'period' => now()->format('Y-m'),
+            'type' => AuthorEarning::TYPE_SALE,
+            'amount_bdt' => (int) round($remaining * $sharePct / 100),
+            'share_pct' => $sharePct,
+            'note' => $note,
+        ]);
     }
 
     /**

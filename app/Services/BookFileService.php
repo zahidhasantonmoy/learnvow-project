@@ -107,6 +107,24 @@ class BookFileService
         );
     }
 
+    /** Store a demo source PDF for a seeded book (Phase 4 §2.4, QA M5). */
+    public function storeDemoPdf(Book $book, string $content): BookFile
+    {
+        $path = 'pdf/'.$book->slug.'.pdf';
+
+        Storage::disk($this->disk())->put($path, $content);
+
+        return BookFile::updateOrCreate(
+            ['book_id' => $book->id, 'type' => 'pdf'],
+            [
+                'disk' => $this->disk(),
+                'path' => $path,
+                'size_bytes' => strlen($content),
+                'mime' => 'application/pdf',
+            ]
+        );
+    }
+
     /**
      * Presigned PUT for direct author uploads (spec §5.1) — R2 only.
      * Not available on the local disk; Phase 3's upload UI needs R2.

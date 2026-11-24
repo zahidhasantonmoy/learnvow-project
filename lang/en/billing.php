@@ -22,6 +22,11 @@ return [
     'cancel_subscription' => 'Cancel subscription',
     'cancel_note' => 'Cancelling keeps Premium until the end of the current term; no refund.',
 
+    // International (Phase 4, §3.1)
+    'intl_title' => 'LearnVow Premium International',
+    'intl_subtitle' => 'Premium for readers outside Bangladesh — all books, one subscription.',
+    'intl_payment_note' => 'International payments are coming soon — manual TrxID for now.',
+
     // Checkout
     'checkout_title' => 'Checkout',
     'subtotal' => 'Subtotal (before discount)',

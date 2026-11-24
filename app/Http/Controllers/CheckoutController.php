@@ -59,6 +59,27 @@ class CheckoutController extends Controller
         ]);
     }
 
+    /** International checkout (spec §3.1, §14.6): manual TrxID only — no gateway button. */
+    public function international(string $locale, BillingService $billing)
+    {
+        $user = auth()->user();
+        $plan = $billing->internationalPlan();
+        if ($plan === null) {
+            abort(404);
+        }
+
+        return view('checkout.index', [
+            'book' => null,
+            'plan' => $plan,
+            'type' => 'premium',
+            'priced' => $billing->priceOrder(['user' => $user, 'type' => 'premium', 'plan_id' => $plan->id]),
+            'bkashNumber' => $billing->setting('payment.bkash_number', ''),
+            'nagadNumber' => $billing->setting('payment.nagad_number', ''),
+            'international' => true,
+            'seo' => $this->seo(__('billing.intl_title'), null, ['noindex' => true]),
+        ]);
+    }
+
     /**
      * Create the order (and TrxID when a payment is due). The Livewire
      * CheckoutForm posts here; pricing is recomputed server-side.

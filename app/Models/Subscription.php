@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subscription extends Model
 {
-    protected $fillable = ['user_id', 'plan_id', 'order_id', 'status', 'starts_at', 'ends_at', 'trial_ends_at', 'cancelled_at', 'cancel_reason'];
+    protected $fillable = ['user_id', 'plan_id', 'order_id', 'status', 'starts_at', 'ends_at', 'trial_ends_at', 'cancelled_at', 'cancel_reason', 'past_due_at', 'gateway'];
 
     protected function casts(): array
     {
@@ -17,6 +17,8 @@ class Subscription extends Model
             'ends_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            // Phase 4 (§12.2).
+            'past_due_at' => 'datetime',
         ];
     }
 

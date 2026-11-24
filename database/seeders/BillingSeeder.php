@@ -42,6 +42,25 @@ class BillingSeeder extends Seeder
             'points.per_purchase' => '10',
             'points.per_finish' => '20',
             'payment.sla_hours' => '12',
+            // Phase 4 (§12.2) — intl, gateway seam, print, FCM, AI, API.
+            'intl.price_bdt' => '199',
+            'intl.plan_slug' => 'premium-monthly-intl',
+            'intl.trial_days' => '7',
+            'intl.currency' => 'BDT',
+            'intl.available_countries' => '',
+            'payments.gateway' => 'manual',
+            'sslcommerz.store_id' => '',
+            'sslcommerz.store_password' => '',
+            'print.base_price_bdt' => '',
+            'print.delivery_charge_bdt' => '',
+            'print.partner_cost_bdt' => '',
+            'print.author_discount_pct' => '',
+            'fcm.enabled' => '0',
+            'fcm.project_id' => '',
+            'fcm.credentials_path' => 'storage/app/private/firebase-service-account.json',
+            'ai.enabled' => '0',
+            'ai.provider' => '',
+            'api.rate_limit_per_minute' => '60',
         ];
         foreach ($settings as $key => $value) {
             DB::table('settings')->updateOrInsert(
@@ -54,6 +73,12 @@ class BillingSeeder extends Seeder
         $plan = SubscriptionPlan::firstOrCreate(
             ['slug' => 'premium-monthly'],
             ['name' => 'LearnVow Premium', 'name_en' => 'LearnVow Premium', 'price_bdt' => 99, 'duration_days' => 30, 'trial_days' => 7, 'is_active' => true]
+        );
+
+        // Phase 4 (§3.1) — Premium International ৳199/30d/7d trial.
+        SubscriptionPlan::firstOrCreate(
+            ['slug' => 'premium-monthly-intl'],
+            ['name' => 'Premium International', 'name_en' => 'Premium International', 'price_bdt' => 199, 'duration_days' => 30, 'trial_days' => 7, 'is_active' => true]
         );
 
         // ---- Coupon EID26: 20% off, applies to all, no expiry/limits. ----

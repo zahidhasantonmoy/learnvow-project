@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Services\AdminService;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -78,6 +79,13 @@ class PayConfig extends Page
             'points.per_purchase' => '',
             'points.per_finish' => '',
             'payment.sla_hours' => '12',
+            // Phase 4 (§3.1, §11.1): international plan + gateway seam.
+            'intl.price_bdt' => '199',
+            'intl.plan_slug' => 'premium-monthly-intl',
+            'intl.trial_days' => '7',
+            'payments.gateway' => 'manual',
+            'sslcommerz.store_id' => '',
+            'sslcommerz.store_password' => '',
         ];
     }
 
@@ -119,6 +127,12 @@ class PayConfig extends Page
             'points_per_purchase' => 'points.per_purchase',
             'points_per_finish' => 'points.per_finish',
             'sla_hours' => 'payment.sla_hours',
+            'intl_price_bdt' => 'intl.price_bdt',
+            'intl_plan_slug' => 'intl.plan_slug',
+            'intl_trial_days' => 'intl.trial_days',
+            'payments_gateway' => 'payments.gateway',
+            'sslcommerz_store_id' => 'sslcommerz.store_id',
+            'sslcommerz_store_password' => 'sslcommerz.store_password',
         ];
     }
 
@@ -179,6 +193,35 @@ class PayConfig extends Page
                     ->minValue(1)
                     ->maxValue(168)
                     ->required(),
+                Placeholder::make('intl_heading')
+                    ->content(__('admin.pay_config.intl_heading')),
+                TextInput::make('intl_price_bdt')
+                    ->label(__('admin.pay_config.intl_price_bdt'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->required(),
+                TextInput::make('intl_plan_slug')
+                    ->label(__('admin.pay_config.intl_plan_slug'))
+                    ->maxLength(100)
+                    ->required(),
+                TextInput::make('intl_trial_days')
+                    ->label(__('admin.pay_config.intl_trial_days'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->required(),
+                TextInput::make('payments_gateway')
+                    ->label(__('admin.pay_config.payments_gateway'))
+                    ->maxLength(50)
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->placeholder('manual'),
+                TextInput::make('sslcommerz_store_id')
+                    ->label(__('admin.pay_config.sslcommerz_store_id'))
+                    ->maxLength(100),
+                TextInput::make('sslcommerz_store_password')
+                    ->label(__('admin.pay_config.sslcommerz_store_password'))
+                    ->password()
+                    ->maxLength(100),
             ])
             ->statePath('data');
     }

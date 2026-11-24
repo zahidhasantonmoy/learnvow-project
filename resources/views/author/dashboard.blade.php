@@ -16,6 +16,7 @@
 
   <p>
     <a href="{{ route('author.publish', ['locale' => app()->getLocale()]) }}" class="btn">{{ __('author.publish_book') }}</a>
+    <a href="{{ route('author.serials.index', ['locale' => app()->getLocale()]) }}" class="btn btn-secondary">{{ __('author.my_serials') }}</a>
     <a href="{{ route('author.books', ['locale' => app()->getLocale()]) }}" class="btn btn-secondary">{{ __('author.my_books') }}</a>
     <a href="{{ route('author.reviews', ['locale' => app()->getLocale()]) }}" class="btn btn-secondary">{{ __('author.my_reviews') }}</a>
     <a href="{{ route('author.earnings', ['locale' => app()->getLocale()]) }}" class="btn btn-secondary">{{ __('author.my_earnings') }}</a>

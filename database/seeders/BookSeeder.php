@@ -93,6 +93,9 @@ class BookSeeder extends Seeder
                 'language' => 'en', 'price_bdt' => 99, 'list_price_bdt' => null, 'pages' => 254,
                 'has_audiobook' => true, 'is_public_domain' => false,
                 'rating_avg' => 4.7, 'ratings_count' => 1980,
+                // QA M3: the one seeded preorderable book (not Prophet) —
+                // future release date so the preorder button renders.
+                'is_preorder' => true, 'preorder_release_at' => now()->addDays(30),
                 'cover_c1' => '#3d3d3d', 'cover_c2' => '#6b6b6b',
                 'description' => 'The private notebooks of a Roman emperor — practical Stoic wisdom on focus, patience and a calm mind.',
                 'description_en' => 'The private notebooks of a Roman emperor — practical Stoic wisdom on focus, patience and a calm mind.',
@@ -127,6 +130,8 @@ class BookSeeder extends Seeder
                     'rights_territories' => ['BD'],
                     'rating_avg' => $data['rating_avg'],
                     'ratings_count' => $data['ratings_count'],
+                    'is_preorder' => $data['is_preorder'] ?? false,
+                    'preorder_release_at' => $data['preorder_release_at'] ?? null,
                     'sales_count' => $data['sales_count'] ?? 0,
                     'readers_count' => 0,
                     'published_at' => now(),

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\DeviceLimitReachedException;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +21,10 @@ class AuthService
      *
      * @return array{ok: bool, user?: User, error?: string}
      */
-    public function login(string $phone, string $password, bool $remember = false): array
+    /**
+     * @return array{ok: bool, user?: User, error?: string, devices?: \Illuminate\Support\Collection}
+     */
+    public function login(string $phone, string $password, bool $remember = false, bool $registerDevice = true): array
     {
         $user = User::where('phone', $phone)->first();
 
@@ -33,6 +37,19 @@ class AuthService
         }
 
         Auth::login($user, $remember);
+
+        // Phase 4 (§5.2): register the web device after login. A 4th
+        // device blocks the login (session is dropped again). API logins
+        // pass $registerDevice=false and register the API device instead.
+        if ($registerDevice) {
+            try {
+                app(DeviceService::class)->registerWebDevice($user, request());
+            } catch (DeviceLimitReachedException $e) {
+                Auth::logout();
+
+                return ['ok' => false, 'error' => 'device_limit_reached', 'user' => $user, 'devices' => $e->devices];
+            }
+        }
 
         return ['ok' => true, 'user' => $user];
     }

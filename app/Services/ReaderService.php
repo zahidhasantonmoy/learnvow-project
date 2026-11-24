@@ -126,6 +126,8 @@ class ReaderService
             ]
         );
 
+        $wasFinished = $existing !== null && $existing->finished_at !== null;
+
         if ($percent >= 100 && $progress->finished_at === null) {
             $progress->finished_at = $incomingAt;
             $progress->save();
@@ -134,6 +136,17 @@ class ReaderService
         // Phase 3 (§2.3): feed the monthly reading-minutes ledger that
         // the subscription pool is split from. Never blocks the save.
         $this->recordReadingMinutes($user, $book, (int) ($existing->total_minutes ?? 0), (int) $progress->total_minutes);
+
+        // Phase 4 §4.5 — badge hooks only; no other progress rule changes.
+        // (ReaderService has no finished() method — finish state is set
+        // here at 100%, so the book_finished hook lives here too.)
+        if (class_exists(BadgeService::class) && Schema::hasTable('badges')) {
+            $badges = app(BadgeService::class);
+            $badges->checkAndAward($user, 'progress_saved');
+            if (! $wasFinished && $progress->finished_at !== null) {
+                $badges->checkAndAward($user, 'book_finished');
+            }
+        }
 
         return $progress->fresh();
     }

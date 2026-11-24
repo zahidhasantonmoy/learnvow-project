@@ -23,6 +23,8 @@ class Book extends Model
         // Phase 3 (§7.16).
         'is_paused', 'hidden_at', 'allow_pod', 'allow_licensed_pdf',
         'print_price_bdt', 'is_featured',
+        // Phase 4 (§12.2).
+        'is_preorder', 'preorder_release_at', 'licensed_pdf_price_bdt',
     ];
 
     protected function casts(): array
@@ -48,6 +50,10 @@ class Book extends Model
             'allow_licensed_pdf' => 'boolean',
             'print_price_bdt' => 'integer',
             'is_featured' => 'boolean',
+            // Phase 4 (§12.2).
+            'is_preorder' => 'boolean',
+            'preorder_release_at' => 'datetime',
+            'licensed_pdf_price_bdt' => 'integer',
         ];
     }
 
