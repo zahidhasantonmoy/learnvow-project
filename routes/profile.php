@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,4 +13,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/privacy', [ProfileController::class, 'privacy'])->name('profile.privacy');
     Route::get('/profile/delete', [ProfileController::class, 'delete'])->name('profile.delete');
     Route::post('/profile/delete', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Phase 4 — devices screen (Builder A, spec §14.3).
+    Route::get('/profile/devices', [DeviceController::class, 'index'])->name('profile.devices');
+    Route::delete('/profile/devices/{device}', [DeviceController::class, 'destroy'])->name('profile.devices.destroy');
 });

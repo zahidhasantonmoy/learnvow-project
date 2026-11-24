@@ -29,6 +29,11 @@ class DatabaseSeeder extends Seeder
             AuthorEarningsSeeder::class,
             // Phase 3 (spec §8.5) — Builder C: the 5 historical audit rows.
             AuditLogSeeder::class,
+            // Phase 4 (spec §13.2) — Builder A: the 8 badge definitions.
+            BadgeSeeder::class,
+            // Phase 4 (spec §4.7) — QA fix: one demo serial + 2 episodes
+            // so /serials/{id} is verifiable (was empty, detail 404).
+            SerialSeeder::class,
         ]);
     }
 }

@@ -1,0 +1,11 @@
+<?php
+
+namespace App\Filament\Resources\BookRequestResource\Pages;
+
+use App\Filament\Resources\BookRequestResource;
+use Filament\Resources\Pages\ListRecords;
+
+class ListBookRequests extends ListRecords
+{
+    protected static string $resource = BookRequestResource::class;
+}

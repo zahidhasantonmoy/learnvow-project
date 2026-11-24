@@ -18,9 +18,39 @@ class AuthorNotification extends Notification
 
     public function __construct(public string $type, public array $data = []) {}
 
+    /**
+     * Phase 4 (§8.3): database always; 'fcm' only when FcmService says
+     * the user may receive this type (enabled + has a token + settings
+     * allow it). FcmService never throws here.
+     */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        try {
+            if (app(\App\Services\FcmService::class)->shouldSend($notifiable, $this->type)) {
+                $channels[] = \App\Notifications\Channels\FcmChannel::class;
+            }
+        } catch (\Throwable) {
+            // FCM must never break the in-app notification.
+        }
+
+        return $channels;
+    }
+
+    /** FCM payload (spec §8.3): title/body from describe(), never a TrxID or full bKash number. */
+    public function toFcm(object $notifiable): array
+    {
+        $described = static::describe(array_merge(['type' => $this->type], $this->data));
+
+        return [
+            'title' => __('author.notifications.title'),
+            'body' => $described['text'],
+            'data' => [
+                'type' => $this->type,
+                'url' => $described['url'] ?? '',
+            ],
+        ];
     }
 
     public function toArray(object $notifiable): array
@@ -45,7 +75,8 @@ class AuthorNotification extends Notification
             'book_approved', 'book_rejected',
             'application_approved', 'application_rejected',
             'payout_approved', 'payout_released', 'payout_failed',
-            'ticket_reply', 'order_live', 'share_changed',
+            'ticket_reply', 'order_live', 'share_changed', 'subscription_past_due',
+            'print_order_status',
         ];
 
         $key = in_array($type, $known, true) ? $type : 'unknown';
@@ -56,6 +87,7 @@ class AuthorNotification extends Notification
             'period' => $data['period'] ?? '',
             'ticket_no' => $data['ticket_no'] ?? '',
             'order_no' => $data['order_no'] ?? '',
+            'status' => $data['status'] ?? '',
             'share' => $data['share_pct'] ?? '',
         ]);
 
@@ -78,6 +110,7 @@ class AuthorNotification extends Notification
                 'order_live' => isset($data['order_id'])
                     ? route('orders.show', ['locale' => $locale, 'order' => $data['order_id']])
                     : route('orders.index', ['locale' => $locale]),
+                'print_order_status' => route('print-orders.index', ['locale' => $locale]),
                 default => null,
             };
         } catch (\Throwable) {

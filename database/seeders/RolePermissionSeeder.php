@@ -54,6 +54,26 @@ class RolePermissionSeeder extends Seeder
         // roles.manage is deliberately super-admin ONLY (roles doc: only the
         // owner creates/removes admins and manages roles).
         'roles.manage' => ['super-admin'],
+        // Phase 4 permissions (spec §17).
+        'api.access' => ['reader', 'author'],
+        'devices.manage_own' => ['reader', 'author'],
+        'collections.manage_own' => ['reader', 'author'],
+        'serials.publish' => ['author'],
+        'serials.approve' => ['admin', 'super-admin'],
+        'preorders.manage_own' => ['reader'],
+        'book_requests.manage' => ['admin', 'super-admin'],
+        'print_orders.create' => ['reader', 'author'],
+        'print_orders.manage' => ['admin', 'super-admin'],
+        'print_orders.fulfill' => ['print-partner'],
+        'print_partner.view' => ['print-partner'],
+        'taxkyc.manage' => ['super-admin'],
+        'taxkyc.submit_own' => ['author'],
+        'clubs.manage_own' => ['reader'],
+        'community.moderate' => ['admin', 'super-admin', 'support'],
+        'badges.manage' => ['admin', 'super-admin'],
+        'fcm.manage' => ['super-admin'],
+        'ai.manage' => ['super-admin'],
+        'subscriptions.international' => ['reader'],
     ];
 
     public function run(): void

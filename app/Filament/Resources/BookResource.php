@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\BookResource\Pages;
 use App\Models\Book;
 use App\Services\AdminService;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -116,6 +117,10 @@ class BookResource extends BaseAdminResource
                 ->label(__('admin.books.audiobook')),
             Toggle::make('is_free')
                 ->label(__('admin.books.free')),
+            Toggle::make('is_preorder')
+                ->label(__('admin.books.is_preorder')),
+            DateTimePicker::make('preorder_release_at')
+                ->label(__('admin.books.preorder_release_at')),
             Select::make('status')
                 ->label(__('admin.books.status'))
                 ->options(static::statusOptions())

@@ -18,11 +18,14 @@ use App\Http\Controllers\AuthorEarningController;
 use App\Http\Controllers\AuthorAnalyticsController;
 use App\Http\Controllers\AuthorPoolController;
 use App\Http\Controllers\AuthorPrintController;
+use App\Http\Controllers\AuthorPrintCopiesController;
 use App\Http\Controllers\AuthorPromoController;
 use App\Http\Controllers\AuthorReviewController;
+use App\Http\Controllers\AuthorSerialController;
 use App\Http\Controllers\AuthorSettingsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SupportChatController;
+use App\Http\Controllers\TaxKycController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
@@ -45,6 +48,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/author/books/{book}/resume', [AuthorBookController::class, 'resume'])->name('author.books.resume');
     Route::post('/author/books/{book}/appeal', [AuthorBookController::class, 'appeal'])->name('author.books.appeal');
 
+    // Serials (§4.7) — author creates, adds episodes via
+    // SerialEpisodeManager; Admin approves (AdminService::approveSerial).
+    Route::get('/author/serials', [AuthorSerialController::class, 'index'])->name('author.serials.index');
+    Route::get('/author/serials/create', [AuthorSerialController::class, 'create'])->name('author.serials.create');
+    Route::post('/author/serials', [AuthorSerialController::class, 'store'])->name('author.serials.store');
+    Route::get('/author/serials/{serial}', [AuthorSerialController::class, 'show'])->name('author.serials.show');
+
     // Audiobook (§1.5).
     Route::get('/author/books/{book}/audio', [AuthorAudioController::class, 'create'])->name('author.books.audio');
     Route::post('/author/books/{book}/audio', [AuthorAudioController::class, 'store'])->name('author.books.audio.store');
@@ -66,6 +76,14 @@ Route::middleware('auth')->group(function () {
     // Print settings (§1.6).
     Route::get('/author/print-settings/{book}', [AuthorPrintController::class, 'edit'])->name('author.print-settings.edit');
     Route::put('/author/print-settings/{book}', [AuthorPrintController::class, 'update'])->name('author.print-settings.update');
+
+    // Author's own printed copies (Phase 4 §2.5 — Builder C).
+    Route::get('/author/print-copies', [AuthorPrintCopiesController::class, 'index'])->name('author.print-copies.index');
+    Route::post('/author/print-copies', [AuthorPrintCopiesController::class, 'store'])->name('author.print-copies.store');
+
+    // Tax & KYC (Phase 4 §3.3 — Builder C).
+    Route::get('/author/tax-kyc', [TaxKycController::class, 'edit'])->name('author.tax-kyc.edit');
+    Route::put('/author/tax-kyc', [TaxKycController::class, 'update'])->name('author.tax-kyc.update');
 
     // Payout settings & profile (§1.7).
     Route::get('/author/settings', [AuthorSettingsController::class, 'edit'])->name('author.settings');

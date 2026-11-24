@@ -18,6 +18,8 @@ use App\Models\User;
 use App\Models\UserBook;
 use App\Models\WalletTransaction;
 use App\Notifications\AuthorNotification;
+use App\Services\Payments\GatewayInterface;
+use App\Services\Payments\ManualTrxIdGateway;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -68,6 +70,78 @@ class BillingService
     public static function isValidTrxId(string $trxId): bool
     {
         return (bool) preg_match('/^[A-Z0-9]{8,12}$/', self::normalizeTrxId($trxId));
+    }
+
+    /** Phase 4 (§3.1): the international plan (premium-monthly-intl, ৳199). */
+    public function internationalPlan(): ?SubscriptionPlan
+    {
+        if (! Schema::hasTable('subscription_plans')) {
+            return null;
+        }
+
+        return SubscriptionPlan::where('slug', 'premium-monthly-intl')->where('is_active', true)->first();
+    }
+
+    /** Phase 4 (§11.1): gateway resolver — unknown setting values fall back to manual, never break. */
+    public function gateway(): GatewayInterface
+    {
+        return match ($this->setting('payments.gateway', 'manual')) {
+            default => new ManualTrxIdGateway($this),
+        };
+    }
+
+    /**
+     * Phase 4 (§9.1): flip overdue subscriptions. trialing + ended → expired;
+     * active + ended with no paid renewal order → past_due (past_due_at set).
+     * Idempotent: already past_due/expired rows are untouched, so a second
+     * run sends no second notification. Returns flip counts.
+     *
+     * @return array{expired: int, past_due: int}
+     */
+    public function markPastDue(): array
+    {
+        $expired = 0;
+        $pastDue = 0;
+        $todayStart = now()->startOfDay();
+
+        $due = Subscription::whereIn('status', ['trialing', 'active'])
+            ->where('ends_at', '<', $todayStart)
+            ->with('user')
+            ->get();
+
+        foreach ($due as $subscription) {
+            if ($subscription->status === 'trialing') {
+                $subscription->update(['status' => 'expired']);
+                $expired++;
+                continue;
+            }
+
+            // A paid premium (renewal) order for this user, created after
+            // the term ended, means payment arrived but activation has not
+            // run yet — leave the flip to activation instead of flipping
+            // and immediately re-activating. (Normally activateSubscription
+            // already expired this row, so this rarely triggers.)
+            $hasPaidRenewal = Order::where('user_id', $subscription->user_id)
+                ->where('type', 'premium')
+                ->where('status', 'paid')
+                ->where('created_at', '>=', $subscription->ends_at)
+                ->where('id', '!=', $subscription->order_id ?? 0)
+                ->exists();
+            if ($hasPaidRenewal) {
+                continue;
+            }
+
+            $subscription->update(['status' => 'past_due', 'past_due_at' => now()]);
+            $pastDue++;
+
+            if (Schema::hasTable('notifications') && $subscription->user !== null) {
+                $subscription->user->notify(new AuthorNotification('subscription_past_due', [
+                    'subscription_id' => $subscription->id,
+                ]));
+            }
+        }
+
+        return ['expired' => $expired, 'past_due' => $pastDue];
     }
 
     /** The active Premium plan (single plan at launch: premium-monthly). */

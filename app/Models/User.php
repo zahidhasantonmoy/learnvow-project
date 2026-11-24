@@ -8,8 +8,10 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'phone', 'email', 'password', 'locale', 'country', 'status', 'wallet_balance_bdt', 'points_balance', 'trial_used_at', 'referral_code', 'reader_default_font', 'reader_default_size'])]
@@ -17,7 +19,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, HasApiTokens, HasRoles, Notifiable;
 
     /**
      * Defence in depth (with Builder C's EnsureAdminPanelAccess middleware):
@@ -70,5 +72,21 @@ class User extends Authenticatable implements FilamentUser
             'points_balance' => 'integer',
             'reader_default_size' => 'integer',
         ];
+    }
+
+    /**
+     * Phase 4 (spec §5.1) — registered devices (web + app).
+     */
+    public function devices(): HasMany
+    {
+        return $this->hasMany(Device::class);
+    }
+
+    /**
+     * Phase 4 (spec §8.2) — FCM push tokens.
+     */
+    public function fcmTokens(): HasMany
+    {
+        return $this->hasMany(FcmToken::class);
     }
 }

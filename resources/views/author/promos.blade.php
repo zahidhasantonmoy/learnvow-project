@@ -5,9 +5,11 @@
   <p><a href="{{ route('author.dashboard', ['locale' => app()->getLocale()]) }}">{{ __('author.back_to_studio') }}</a></p>
   <p>{{ __('author.promo_share_note') }}</p>
 
-  @if(! $canCreate)
+  @if($limits['max_percent'] === null && $limits['max_duration_days'] === null)
     <p class="alert">{{ __('author.promo_no_limits') }}</p>
-  @else
+  @endif
+
+  @if($canCreate)
     <form method="POST" action="{{ route('author.promos.store', ['locale' => app()->getLocale()]) }}">
       @csrf
       <p>
@@ -23,12 +25,12 @@
         <input type="text" id="code" name="code" maxlength="32">
       </p>
       <p>
-        <label for="percent">{{ __('author.promo_percent') }} * (1–{{ $limits['max_percent'] }})</label><br>
-        <input type="number" id="percent" name="percent" min="1" max="{{ $limits['max_percent'] }}" required>
+        <label for="percent">{{ __('author.promo_percent') }} * (1–{{ $limits['max_percent'] ?? 100 }})</label><br>
+        <input type="number" id="percent" name="percent" min="1" max="{{ $limits['max_percent'] ?? 100 }}" required>
       </p>
       <p>
-        <label for="duration_days">{{ __('author.promo_duration_days') }} * (1–{{ $limits['max_duration_days'] }})</label><br>
-        <input type="number" id="duration_days" name="duration_days" min="1" max="{{ $limits['max_duration_days'] }}" required>
+        <label for="duration_days">{{ __('author.promo_duration_days') }} * @if($limits['max_duration_days'] !== null)(1–{{ $limits['max_duration_days'] }})@endif</label><br>
+        <input type="number" id="duration_days" name="duration_days" min="1" @if($limits['max_duration_days'] !== null)max="{{ $limits['max_duration_days'] }}"@endif required>
       </p>
       <p>
         <label for="max_uses">{{ __('author.promo_max_uses') }} ({{ __('author.optional') }})</label><br>

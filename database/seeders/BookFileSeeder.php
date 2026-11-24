@@ -24,6 +24,35 @@ class BookFileSeeder extends Seeder
         foreach (Book::all() as $book) {
             $service->storeDemoEpub($book, $this->buildDemoEpub($book));
         }
+
+        // QA M5: ONE seeded book (Pride and Prejudice — not Prophet) gets
+        // a real multi-page source PDF + allow_licensed_pdf=1, so the
+        // watermarked licensed-PDF download is verifiable end to end.
+        // The PDF is generated here with FPDF, never a committed binary.
+        $licensed = Book::where('slug', 'pride-and-prejudice')->first();
+        if ($licensed !== null) {
+            $service->storeDemoPdf($licensed, $this->buildDemoPdf($licensed));
+            $licensed->update(['allow_licensed_pdf' => true]);
+        }
+    }
+
+    /** Build a minimal 3-page demo PDF (FPDF, ASCII text only). */
+    private function buildDemoPdf(Book $book): string
+    {
+        $pdf = new \FPDF();
+        $pdf->SetTitle($book->title.' (demo edition)');
+        $pdf->SetAuthor('LearnVow (demo edition)');
+
+        foreach ([1, 2, 3] as $page) {
+            $pdf->AddPage();
+            $pdf->SetFont('Helvetica', 'B', 16);
+            $pdf->Cell(0, 12, $book->title.' - Demo page '.$page);
+            $pdf->Ln(14);
+            $pdf->SetFont('Helvetica', '', 12);
+            $pdf->MultiCell(0, 8, 'Demo content. This is a demo licensed PDF for the LearnVow reader - not the book\'s full text. Page '.$page.' of 3.');
+        }
+
+        return $pdf->Output('S');
     }
 
     /** Build a minimal valid EPUB (EPUB 2) as raw bytes. */

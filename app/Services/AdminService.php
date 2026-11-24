@@ -329,6 +329,40 @@ class AdminService
     // rejected / taken_down). No soft delete — status carries the state.
     // ------------------------------------------------------------------
 
+    /**
+     * Phase 4 §4.7 — approve a serial (Admin/Super Admin only).
+     * The spec's serial status enum has no approval state, so approval
+     * is recorded in approved_at/approved_by (see Serial model); the
+     * serial's own status (ongoing/completed/paused) is untouched.
+     */
+    public function approveSerial(\App\Models\Serial $serial, ?User $actor = null): void
+    {
+        $this->authorizeActor($actor, static::isAdmin($actor), 'serials.approve');
+
+        if ($serial->approved_at !== null) {
+            return;
+        }
+
+        $serial->approved_at = now();
+        $serial->approved_by = $actor?->id;
+        $serial->save();
+
+        static::writeAudit($actor, 'serial.approved', 'serials', $serial->getKey(), [
+            'message' => 'Approved serial: '.$serial->title,
+        ]);
+
+        $authorUserId = $serial->author?->user_id;
+        if ($authorUserId !== null) {
+            $authorUser = User::find($authorUserId);
+            if ($authorUser !== null) {
+                $authorUser->notify(new AuthorNotification('serial_approved', [
+                    'title' => $serial->title,
+                    'serial_id' => $serial->id,
+                ]));
+            }
+        }
+    }
+
     public function approveBook(Book $book, ?User $actor = null): void
     {
         $this->authorizeActor($actor, static::canApproveBooks($actor), 'books.approve');
@@ -676,6 +710,13 @@ class AdminService
                     $book->hidden_at = null;
                     $book->save();
                 }
+            } elseif ($report->reportable_type === Report::TYPE_POST) {
+                // Dismiss = reopen the post (Admin "খুলতে পারবে", §6.2).
+                $post = \App\Models\CommunityPost::query()->find($report->reportable_id);
+                if ($post && $post->status === \App\Models\CommunityPost::STATUS_HIDDEN) {
+                    $post->status = \App\Models\CommunityPost::STATUS_PUBLISHED;
+                    $post->save();
+                }
             }
         } else {
             $report->status = 'action_taken';
@@ -692,6 +733,10 @@ class AdminService
                     $review->status = 'rejected';
                     $review->save();
                 }
+            } elseif ($report->reportable_type === Report::TYPE_POST) {
+                // Action = delete the post (Admin "মুছতে পারবে", §6.2).
+                $post = \App\Models\CommunityPost::query()->find($report->reportable_id);
+                $post?->delete();
             }
         }
 

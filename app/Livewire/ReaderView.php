@@ -29,6 +29,10 @@ class ReaderView extends Component
 
     public bool $finished = false;
 
+    public string $vocabWord = '';
+
+    public ?string $vocabMeaning = null;
+
     public function mount(Book $book): void
     {
         $this->book = $book;
@@ -96,6 +100,37 @@ class ReaderView extends Component
 
         app(ReaderService::class)->addHighlight(Auth::user(), $this->book, $cfiStart, $cfiEnd, $color, $note);
         $this->dispatch('highlight-saved');
+    }
+
+    /**
+     * Phase 4 §4.11 — save a looked-up dictionary word to the
+     * vocabulary. Called from the dictionary popup on the reader page
+     * (reader.js shows the meaning; this stores it). One row per
+     * user+word (stored lowercase); a repeat save is a no-op.
+     */
+    public function addToVocabulary(string $word, ?string $meaningEn = null, ?string $meaningBn = null): void
+    {
+        $word = mb_strtolower(trim($word));
+        abort_unless($word !== '' && mb_strlen($word) <= 100, 422);
+
+        \App\Models\VocabularyWord::firstOrCreate(
+            ['user_id' => Auth::user()->id, 'word' => $word],
+            [
+                'meaning_en' => $meaningEn,
+                'meaning_bn' => $meaningBn,
+                'book_id' => $this->book->id,
+                'cfi' => $this->cfi,
+            ]
+        );
+
+        $this->dispatch('vocabulary-saved', word: $word);
+    }
+
+    /** Dictionary popup form submit — stores the typed word. */
+    public function saveVocabulary(): void
+    {
+        $this->addToVocabulary($this->vocabWord, $this->vocabMeaning);
+        $this->reset(['vocabWord', 'vocabMeaning']);
     }
 
     public function addNote(string $cfi, string $body): void

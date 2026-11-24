@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\Storage;
  * Builder C — Super Admin platform settings (spec §4.1 superSettings).
  *
  * Phase 3 FULL version: DB-backed (settings table), all §7.16 keys —
- * pool.* (same keys PoolRules edits), promo.* (blank until Super Admin
- * sets them, A12), protection.* (same keys the Protection page edits),
+ * pool.* (same keys PoolRules edits), promo.* (blank = no limit, max 100%,
+ * Phase 4 §10/K1), protection.* (same keys the Protection page edits),
  * upload.* — plus the site fields. Super Admin only; every save is
  * audited (settings.changed with the changed keys).
  *
@@ -80,6 +80,10 @@ class Settings extends Page
             'pool.payout_day' => '10',
             'promo.max_percent' => '',
             'promo.max_duration_days' => '',
+            'print.base_price_bdt' => '',
+            'print.delivery_charge_bdt' => '',
+            'print.partner_cost_bdt' => '',
+            'print.author_discount_pct' => '',
             'protection.watermark_enabled' => '1',
             'protection.device_limit' => '3',
             'protection.encrypted_downloads' => '0',
@@ -88,6 +92,10 @@ class Settings extends Page
             'upload.max_cover_mb' => '5',
             'upload.min_cover_width' => '1600',
             'upload.min_cover_height' => '2400',
+            // Phase 4 (§8.1): FCM keys (Builder B).
+            'fcm.enabled' => '0',
+            'fcm.project_id' => '',
+            'fcm.credentials_path' => 'storage/app/private/firebase-service-account.json',
         ];
     }
 
@@ -107,6 +115,10 @@ class Settings extends Page
             'pool_payout_day' => 'pool.payout_day',
             'promo_max_percent' => 'promo.max_percent',
             'promo_max_duration_days' => 'promo.max_duration_days',
+            'print_base_price_bdt' => 'print.base_price_bdt',
+            'print_delivery_charge_bdt' => 'print.delivery_charge_bdt',
+            'print_partner_cost_bdt' => 'print.partner_cost_bdt',
+            'print_author_discount_pct' => 'print.author_discount_pct',
             'protection_watermark_enabled' => 'protection.watermark_enabled',
             'protection_device_limit' => 'protection.device_limit',
             'protection_encrypted_downloads' => 'protection.encrypted_downloads',
@@ -115,6 +127,9 @@ class Settings extends Page
             'upload_max_cover_mb' => 'upload.max_cover_mb',
             'upload_min_cover_width' => 'upload.min_cover_width',
             'upload_min_cover_height' => 'upload.min_cover_height',
+            'fcm_enabled' => 'fcm.enabled',
+            'fcm_project_id' => 'fcm.project_id',
+            'fcm_credentials_path' => 'fcm.credentials_path',
         ];
     }
 
@@ -218,6 +233,20 @@ class Settings extends Page
                 TextInput::make('promo_max_duration_days')
                     ->label(__('admin.settings_extra.promo_max_duration_days'))
                     ->numeric()->minValue(1),
+                Placeholder::make('print_heading')
+                    ->content(__('admin.settings_extra.print_heading')),
+                TextInput::make('print_base_price_bdt')
+                    ->label(__('admin.settings_extra.print_base_price_bdt'))
+                    ->numeric()->minValue(0),
+                TextInput::make('print_delivery_charge_bdt')
+                    ->label(__('admin.settings_extra.print_delivery_charge_bdt'))
+                    ->numeric()->minValue(0),
+                TextInput::make('print_partner_cost_bdt')
+                    ->label(__('admin.settings_extra.print_partner_cost_bdt'))
+                    ->numeric()->minValue(0),
+                TextInput::make('print_author_discount_pct')
+                    ->label(__('admin.settings_extra.print_author_discount_pct'))
+                    ->numeric()->minValue(0)->maxValue(100),
                 Placeholder::make('protection_heading')
                     ->content(__('admin.settings_extra.protection_heading')),
                 TextInput::make('protection_watermark_enabled')
@@ -246,6 +275,17 @@ class Settings extends Page
                 TextInput::make('upload_min_cover_height')
                     ->label(__('admin.settings_extra.upload_min_cover_height'))
                     ->numeric()->minValue(1)->required(),
+                Placeholder::make('fcm_heading')
+                    ->content(__('admin.settings_extra.fcm_heading')),
+                TextInput::make('fcm_enabled')
+                    ->label(__('admin.settings_extra.fcm_enabled'))
+                    ->numeric()->minValue(0)->maxValue(1)->required(),
+                TextInput::make('fcm_project_id')
+                    ->label(__('admin.settings_extra.fcm_project_id'))
+                    ->maxLength(100),
+                TextInput::make('fcm_credentials_path')
+                    ->label(__('admin.settings_extra.fcm_credentials_path'))
+                    ->maxLength(255),
             ])
             ->statePath('data');
     }

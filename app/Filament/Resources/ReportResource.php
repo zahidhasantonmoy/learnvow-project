@@ -178,6 +178,21 @@ class ReportResource extends BaseAdminResource
                         $record->save();
                     })
                     ->successNotificationTitle(__('admin.actions.hidden')),
+                Action::make('hide_post')
+                    ->label(__('community.hide_post'))
+                    ->icon('heroicon-o-eye-slash')
+                    ->color('warning')
+                    ->visible(fn (Report $record) => $record->reportable_type === Report::TYPE_POST
+                        && in_array($record->status, ['open', 'reviewing'], true))
+                    ->action(function (Report $record) {
+                        $post = $record->post;
+                        if ($post && $post->status === \App\Models\CommunityPost::STATUS_PUBLISHED) {
+                            app(\App\Services\CommunityService::class)->hidePost(auth()->user(), $post);
+                        }
+                        $record->status = 'reviewing';
+                        $record->save();
+                    })
+                    ->successNotificationTitle(__('community.post_hidden')),
                 ViewAction::make(),
             ]);
     }

@@ -30,3 +30,4 @@ Homestead.yaml
 Thumbs.db
 
 /database/*.sqlite
+/storage/app/private/firebase-service-account.json

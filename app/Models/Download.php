@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Download extends Model
 {
-    protected $fillable = ['user_id', 'book_id', 'file_id', 'size_bytes', 'downloaded_at'];
+    protected $fillable = ['user_id', 'book_id', 'file_id', 'size_bytes', 'downloaded_at', 'is_encrypted', 'expires_at', 'encryption_key_id'];
 
     protected function casts(): array
     {
         return [
             'size_bytes' => 'integer',
             'downloaded_at' => 'datetime',
+            'is_encrypted' => 'boolean',
+            'expires_at' => 'datetime',
         ];
     }
 

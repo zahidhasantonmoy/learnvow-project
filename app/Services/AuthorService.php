@@ -559,10 +559,12 @@ class AuthorService
     }
 
     // ------------------------------------------------------------------
-    // Promos (§1.9) — inside the owner's limits, never hardcoded
+    // Promos (§1.9) — Phase 4 §10 (decision 4, K1): promo guardrails are
+    // fully manual. An UNSET limit means NO limit (never "blocked");
+    // a set limit (1–100) is enforced; discount is never above 100%.
     // ------------------------------------------------------------------
 
-    /** Promo limits come from settings only; null = not set by Super Admin yet. */
+    /** Promo limits come from settings only; null = no limit (Phase 4 §10). */
     public function promoLimits(): array
     {
         return [
@@ -571,35 +573,41 @@ class AuthorService
         ];
     }
 
+    /**
+     * Phase 4 §10.2: limits no longer gate promo creation — an approved
+     * author with a book can always create a promo. The controller
+     * already aborts unless an approved author exists; this method only
+     * records that the limits themselves never block.
+     */
     public function canCreatePromo(): bool
     {
-        $limits = $this->promoLimits();
-
-        return $limits['max_percent'] !== null && $limits['max_duration_days'] !== null;
+        return true;
     }
 
-    /** Author coupon for their own book only, inside the owner's limits. */
+    /** Author coupon for their own book only, inside the owner's limits (if any). */
     public function createPromo(Author $author, array $data): Coupon
     {
         $limits = $this->promoLimits();
 
-        if ($limits['max_percent'] === null || $limits['max_duration_days'] === null) {
-            throw new InvalidArgumentException('The owner has not set promo limits yet.');
-        }
-
         $book = Book::findOrFail((int) ($data['book_id'] ?? 0));
         $this->assertOwnBook($author, $book);
 
+        // Hard cap 100% (100% = free is allowed); a set limit caps lower.
+        $cap = $limits['max_percent'] !== null ? min((int) $limits['max_percent'], 100) : 100;
         $percent = (int) ($data['percent'] ?? 0);
-        if ($percent < 1 || $percent > $limits['max_percent']) {
-            throw new InvalidArgumentException("Discount must be between 1% and {$limits['max_percent']}%.");
+        if ($percent < 1 || $percent > $cap) {
+            throw new InvalidArgumentException("Discount must be between 1% and {$cap}%.");
         }
 
         $startsAt = now();
         $endsAt = isset($data['ends_at']) ? now()->parse($data['ends_at']) : $startsAt->copy()->addDays((int) ($data['duration_days'] ?? 1));
         $durationDays = (int) $startsAt->diffInDays($endsAt);
 
-        if ($durationDays < 1 || $durationDays > $limits['max_duration_days']) {
+        if ($durationDays < 1) {
+            throw new InvalidArgumentException('Promo duration must be at least 1 day.');
+        }
+
+        if ($limits['max_duration_days'] !== null && $durationDays > $limits['max_duration_days']) {
             throw new InvalidArgumentException("Promo duration must be within {$limits['max_duration_days']} days.");
         }
 
@@ -784,7 +792,7 @@ class AuthorService
         return $value === null || $value === '' ? $default : (int) $value;
     }
 
-    /** Null when the setting is absent/empty (promo limits: unset = blocked). */
+    /** Null when the setting is absent/empty (promo limits: unset = no limit, Phase 4 §10). */
     public function settingIntOrNull(string $key): ?int
     {
         $value = $this->setting($key);
