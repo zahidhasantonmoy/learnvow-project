@@ -3,7 +3,7 @@
 @section('content')
 <h1 class="serif">{{ __('reader.finished_heading') }}</h1>
 <p>{{ __('reader.finished_text', ['title' => $book->title]) }}</p>
-<p><span class="badge">{{ __('reader.finished_badge') }}</span> · {{ __('reader.minutes_read', ['minutes' => $progress->total_minutes]) }}</p>
+<p><span class="badge">{{ __('reader.finished_badge') }}</span>@if($progress->total_minutes > 0) · {{ __('reader.minutes_read', ['minutes' => $progress->total_minutes]) }}@endif</p>
 
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;">
   <a href="{{ route('books.show', ['locale' => app()->getLocale(), 'slug' => $book->slug]) }}" class="btn">{{ __('reader.rate_book') }}</a>

@@ -62,6 +62,36 @@ class BillingLivewireTest extends TestCase
         $this->assertDatabaseHas('payments', ['order_id' => $order->id, 'trx_id_normalized' => '9HX7K2LMNP']);
     }
 
+    public function test_checkout_form_with_invalid_trxid_creates_no_order(): void
+    {
+        // AUD3-02: a bad TrxID used to leave an orphan pending_payment
+        // order behind. The format is now checked before createOrder.
+        $this->actingAs($this->reader);
+
+        Livewire::test(CheckoutForm::class, ['type' => 'book', 'bookId' => $this->prophet->id])
+            ->set('method', 'bkash')
+            ->set('trxId', 'BAD!')
+            ->call('submit')
+            ->assertSet('error', __('billing.trxid_invalid'));
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_wallet_topup_with_invalid_trxid_creates_no_order(): void
+    {
+        // AUD3-02, wallet path: same orphan-order bug as checkout.
+        $this->actingAs($this->reader);
+
+        Livewire::test(\App\Livewire\WalletTopup::class)
+            ->set('amount', 100)
+            ->set('method', 'bkash')
+            ->set('trxId', '')
+            ->call('submit')
+            ->assertSet('error', __('billing.trxid_invalid'));
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
     public function test_checkout_form_rejects_invalid_coupon_live(): void
     {
         $this->actingAs($this->reader);

@@ -102,7 +102,11 @@ class BillingService
     {
         $expired = 0;
         $pastDue = 0;
-        $todayStart = now()->startOfDay();
+        // EB-06: the day boundary is Dhaka business time, not UTC. The
+        // boundary is converted to UTC before the query because ends_at
+        // is stored in UTC (app timezone) — comparing a Dhaka wall-clock
+        // string against UTC-stored values would flip up to ~6h early.
+        $todayStart = now('Asia/Dhaka')->startOfDay()->setTimezone('UTC');
 
         $due = Subscription::whereIn('status', ['trialing', 'active'])
             ->where('ends_at', '<', $todayStart)
@@ -111,7 +115,8 @@ class BillingService
 
         foreach ($due as $subscription) {
             if ($subscription->status === 'trialing') {
-                $subscription->update(['status' => 'expired']);
+                // EB-08: status flip inside a transaction.
+                DB::transaction(fn () => $subscription->update(['status' => 'expired']));
                 $expired++;
                 continue;
             }
@@ -131,7 +136,10 @@ class BillingService
                 continue;
             }
 
-            $subscription->update(['status' => 'past_due', 'past_due_at' => now()]);
+            // EB-08: the status flip is transactional; the notification
+            // is sent AFTER the transaction commits, so a notify failure
+            // can never leave the flip half-done (or vice versa).
+            DB::transaction(fn () => $subscription->update(['status' => 'past_due', 'past_due_at' => now()]));
             $pastDue++;
 
             if (Schema::hasTable('notifications') && $subscription->user !== null) {
@@ -390,7 +398,7 @@ class BillingService
             throw new InvalidArgumentException('Payment method must be bKash or Nagad.');
         }
         if (! self::isValidTrxId($trxId)) {
-            throw new InvalidArgumentException('TrxID format is invalid.');
+            throw new InvalidArgumentException(__('billing.trxid_invalid'));
         }
         if ($order->total_bdt === 0) {
             throw new InvalidArgumentException('This order needs no TrxID — it is already paid.');
@@ -585,7 +593,7 @@ class BillingService
             throw new InvalidArgumentException('TrxID correction limit reached (3). Please contact support.');
         }
         if (! self::isValidTrxId($newTrxId)) {
-            throw new InvalidArgumentException('TrxID format is invalid.');
+            throw new InvalidArgumentException(__('billing.trxid_invalid'));
         }
 
         $normalized = self::normalizeTrxId($newTrxId);
@@ -771,6 +779,17 @@ class BillingService
 
     // ---- Wallet (spec §3.4): cache + ledger, always in a DB transaction. ----
 
+    /**
+     * EB-07: re-read the user row with a write lock inside the
+     * transaction. The old `$user->fresh()` read-modify-write could lose
+     * an update when two top-ups/debits ran concurrently (safe on the
+     * SQLite dev DB, a real race on the planned MariaDB host).
+     */
+    protected function lockedUser(User $user): User
+    {
+        return User::where('id', $user->id)->lockForUpdate()->firstOrFail();
+    }
+
     public function walletTopup(User $user, int $amount, ?string $referenceType = null, ?int $referenceId = null, ?string $note = null, string $type = 'topup'): WalletTransaction
     {
         if ($amount <= 0) {
@@ -778,7 +797,7 @@ class BillingService
         }
 
         return DB::transaction(function () use ($user, $amount, $referenceType, $referenceId, $note, $type) {
-            $fresh = $user->fresh();
+            $fresh = $this->lockedUser($user);
             $balance = (int) $fresh->wallet_balance_bdt + $amount;
             $fresh->update(['wallet_balance_bdt' => $balance]);
 
@@ -801,7 +820,7 @@ class BillingService
         }
 
         return DB::transaction(function () use ($user, $amount, $referenceType, $referenceId, $note) {
-            $fresh = $user->fresh();
+            $fresh = $this->lockedUser($user);
             $balance = (int) $fresh->wallet_balance_bdt;
             if ($amount > $balance) {
                 throw new InvalidArgumentException('Wallet balance is not enough.');
@@ -833,7 +852,7 @@ class BillingService
         }
 
         return DB::transaction(function () use ($user, $amount, $note) {
-            $fresh = $user->fresh();
+            $fresh = $this->lockedUser($user);
             $balance = (int) $fresh->wallet_balance_bdt + $amount;
             $fresh->update(['wallet_balance_bdt' => $balance]);
 
@@ -869,7 +888,7 @@ class BillingService
         }
 
         return DB::transaction(function () use ($user, $points, $type, $referenceType, $referenceId) {
-            $fresh = $user->fresh();
+            $fresh = $this->lockedUser($user);
             $balance = (int) $fresh->points_balance + $points;
             $fresh->update(['points_balance' => $balance]);
 
@@ -891,7 +910,7 @@ class BillingService
         }
 
         return DB::transaction(function () use ($user, $points, $referenceType, $referenceId) {
-            $fresh = $user->fresh();
+            $fresh = $this->lockedUser($user);
             if ($points > (int) $fresh->points_balance) {
                 throw new InvalidArgumentException('Not enough points.');
             }
@@ -936,7 +955,7 @@ class BillingService
     {
         $gift = GiftCode::where('code', strtoupper(trim($code)))->first();
         if ($gift === null) {
-            throw new InvalidArgumentException('Gift code not found.');
+            throw new InvalidArgumentException(__('billing.gift_code_not_found'));
         }
         if ($gift->status !== 'active' || $gift->claimed_by !== null) {
             throw new InvalidArgumentException('This gift code was already claimed.');

@@ -466,7 +466,7 @@ return [
     'protection' => [
         'label' => 'Book protection',
         'heading' => 'Book Protection',
-        'note' => 'Settings only — watermark enforcement lands in Phase 4. Changes apply to new downloads at once.',
+        'note' => 'Settings only — watermark enforcement is live since Phase 4. Changes apply to new downloads at once.',
         'watermark_enabled' => 'Watermark enabled (buyer name/phone on downloads)',
         'device_limit' => 'Device limit per account',
         'encrypted_downloads' => 'Encrypted downloads enabled',

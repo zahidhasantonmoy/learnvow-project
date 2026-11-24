@@ -17,6 +17,10 @@ class PrintPartnerController extends Controller
     /** Only orders assigned to this partner — never another partner's. */
     public function index(string $locale)
     {
+        // AUD3-06: this dashboard belongs to the print-partner role only.
+        // Support (and anyone else) opening it used to get an empty page.
+        abort_unless(auth()->user()->hasRole('print-partner'), 403);
+
         $orders = PrintOrder::where('partner_id', auth()->id())
             ->with(['book', 'user'])->latest()->paginate(12);
 

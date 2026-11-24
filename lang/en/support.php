@@ -50,6 +50,7 @@ return [
         'created_at' => 'Opened at',
         'empty' => 'No tickets yet.',
         'my_tickets' => 'My tickets',
+        'queue' => 'Ticket queue',
     ],
     'faqs' => [
         'label' => 'FAQ',

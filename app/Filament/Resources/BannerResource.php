@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\BannerResource\Pages;
 use App\Models\Banner;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
@@ -94,6 +95,7 @@ class BannerResource extends BaseAdminResource
             ])
             ->actions([
                 EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 

@@ -24,6 +24,10 @@
 
     <button type="submit" class="btn">{{ __('auth.reset_button') }}</button>
 
+    @if(app()->environment('local') && session('dev_otp_code'))
+        <p><strong>{{ __('auth.dev_otp_code') }} {{ session('dev_otp_code') }}</strong></p>
+    @endif
+
     <p>
         <a href="{{ route('login', ['locale' => app()->getLocale()]) }}">{{ __('auth.back_to_login') }}</a>
     </p>

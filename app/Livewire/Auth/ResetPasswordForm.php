@@ -3,6 +3,7 @@
 namespace App\Livewire\Auth;
 
 use App\Services\AuthService;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Component;
 
 class ResetPasswordForm extends Component
@@ -32,6 +33,15 @@ class ResetPasswordForm extends Component
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
+        // SEC-03: throttle reset attempts (5/min per phone+IP).
+        $key = 'otp-reset:'.$validated['phone'].'|'.request()->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $this->addError('code', __('auth.otp_throttled', ['seconds' => RateLimiter::availableIn($key)]));
+
+            return;
+        }
+        RateLimiter::hit($key, 60);
+
         if (! $auth->resetPassword($validated['phone'], $validated['code'], $validated['password'])) {
             $this->addError('code', __('auth.otp_invalid'));
 
@@ -39,6 +49,7 @@ class ResetPasswordForm extends Component
         }
 
         session()->forget('otp_phone');
+        AuthService::forgetDevCode();
 
         return redirect()
             ->route('login', ['locale' => $this->locale])

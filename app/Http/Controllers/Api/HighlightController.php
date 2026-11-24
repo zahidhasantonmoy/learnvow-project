@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Book;
 use App\Models\Highlight;
+use App\Services\BookService;
 use App\Services\ReaderService;
 use Illuminate\Http\Request;
 
@@ -21,8 +22,13 @@ class HighlightController extends ApiController
         ])->values());
     }
 
-    public function store(Request $request, Book $book, ReaderService $reader)
+    public function store(Request $request, Book $book, ReaderService $reader, BookService $books)
     {
+        // SEC-08: same canRead gate as saveProgress/file/download.
+        if (! $books->canRead($request->user(), $book)) {
+            return $this->fail(__('api.cannot_read'), 403);
+        }
+
         $data = $request->validate([
             'cfi_start' => 'required|string|max:500', 'cfi_end' => 'required|string|max:500',
             'color' => 'nullable|in:yellow,green,blue,pink', 'note' => 'nullable|string|max:1000',

@@ -17,6 +17,8 @@
 <header class="site-header">
   <div class="container header-inner">
     <a href="{{ route('home', ['locale' => app()->getLocale()]) }}" class="brand serif">LearnVow<small>{{ __('nav.tagline') }}</small></a>
+    {{-- UI-05: hamburger — the nav collapses below 768px (see styles). --}}
+    <button type="button" class="nav-toggle" aria-label="{{ __('nav.menu') }}" aria-expanded="false" onclick="var h=this.closest('.site-header');h.classList.toggle('nav-open');this.setAttribute('aria-expanded',h.classList.contains('nav-open'));">☰</button>
     <nav class="main-nav">
       <a href="{{ route('home', ['locale' => app()->getLocale()]) }}">{{ __('nav.home') }}</a>
       <a href="{{ route('books.index', ['locale' => app()->getLocale()]) }}">{{ __('nav.browse') }}</a>

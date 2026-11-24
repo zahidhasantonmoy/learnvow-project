@@ -4,9 +4,56 @@ namespace Tests\Feature\Api;
 
 use App\Models\Order;
 use App\Models\Subscription;
+use App\Models\UserBook;
 
 class OrdersWalletApiTest extends ApiTestCase
 {
+    public function test_api_order_blocked_when_book_owned_via_purchase(): void
+    {
+        // AUD3-07 (API follow-up): same rule as the web checkout — a
+        // book owned via PURCHASE cannot be bought again via the API.
+        UserBook::create([
+            'user_id' => $this->reader->id, 'book_id' => $this->prophet->id, 'source' => 'purchase',
+        ]);
+        $this->asReader();
+
+        $this->postJson('/api/v1/orders', [
+            'type' => 'book', 'book_id' => $this->prophet->id,
+        ])->assertStatus(422)
+            ->assertJsonPath('message', 'You already own this book.')
+            ->assertJsonPath('meta.locale', 'en');
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_api_order_allowed_when_access_is_premium_only(): void
+    {
+        // X5: Premium access is NOT ownership — a Premium user may buy
+        // the book separately for permanent ownership after Premium ends.
+        Subscription::create([
+            'user_id' => $this->reader->id, 'plan_id' => $this->plan->id,
+            'status' => 'active', 'starts_at' => now(), 'ends_at' => now()->addDays(30),
+        ]);
+        $this->asReader();
+
+        $this->postJson('/api/v1/orders', [
+            'type' => 'book', 'book_id' => $this->prophet->id,
+        ])->assertCreated()->assertJsonPath('data.total_bdt', 96);
+
+        $this->assertDatabaseCount('orders', 1);
+    }
+
+    public function test_api_order_allowed_when_book_not_owned(): void
+    {
+        $this->asReader();
+
+        $this->postJson('/api/v1/orders', [
+            'type' => 'book', 'book_id' => $this->gitanjali->id,
+        ])->assertCreated()->assertJsonPath('data.type', 'book');
+
+        $this->assertDatabaseCount('orders', 1);
+    }
+
     public function test_order_store_prices_server_side_and_trxid_flow(): void
     {
         $this->asReader();

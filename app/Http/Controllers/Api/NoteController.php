@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Book;
 use App\Models\Note;
+use App\Services\BookService;
 use App\Services\ReaderService;
 use Illuminate\Http\Request;
 
@@ -20,8 +21,13 @@ class NoteController extends ApiController
         ])->values());
     }
 
-    public function store(Request $request, Book $book, ReaderService $reader)
+    public function store(Request $request, Book $book, ReaderService $reader, BookService $books)
     {
+        // SEC-08: same canRead gate as saveProgress/file/download.
+        if (! $books->canRead($request->user(), $book)) {
+            return $this->fail(__('api.cannot_read'), 403);
+        }
+
         $data = $request->validate(['cfi' => 'required|string|max:500', 'body' => 'required|string|max:5000']);
         $note = $reader->addNote($request->user(), $book, $data['cfi'], $data['body']);
 

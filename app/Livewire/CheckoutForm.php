@@ -63,6 +63,16 @@ class CheckoutForm extends Component
         $this->error = null;
         $user = auth()->user();
 
+        // AUD3-02: validate a supplied TrxID BEFORE creating the order —
+        // a bad TrxID used to leave an orphan pending_payment order.
+        // (An empty TrxID is allowed: the order is created and the user
+        // submits the TrxID on the fix-TrxID page.)
+        if (trim($this->trxId) !== '' && ! BillingService::isValidTrxId($this->trxId)) {
+            $this->error = __('billing.trxid_invalid');
+
+            return null;
+        }
+
         try {
             $priced = $this->priced($billing);
             $order = $billing->createOrder($user, $priced);

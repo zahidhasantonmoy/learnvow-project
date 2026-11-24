@@ -15,6 +15,17 @@ use Illuminate\Support\Facades\Schema;
  */
 class BookService
 {
+    // PERF-01 per-request memos (this service instance lives for one
+    // request, so these never go stale across requests):
+    // user id => has active premium; owned book ids preloaded by lists.
+    protected array $premiumMemo = [];
+
+    protected ?bool $subscriptionsTableExists = null;
+
+    protected ?array $ownedBookIds = null;
+
+    protected ?int $ownedBookUserId = null;
+
     /**
      * Transliteration pairs so a Bengali query finds an English-titled
      * book and vice versa (e.g. "gitanjali" and "গীতাঞ্জলি" both match
@@ -86,9 +97,11 @@ class BookService
         $found = collect();
 
         // 1) Scout (database driver — LIKE over toSearchableArray columns).
+        // PERF-03: cap the Scout branch like the LIKE fallback (50).
         try {
             $scout = Book::search($query)
                 ->query(fn ($q) => $q->where('status', 'published')->where('is_paused', false)->whereNull('hidden_at'))
+                ->take(50)
                 ->get();
             $found = $found->merge($scout);
         } catch (\Throwable) {
@@ -139,6 +152,23 @@ class BookService
     }
 
     /**
+     * Permanent ownership: a user_books row (purchase / gift / free
+     * claim). Unlike canRead(), Premium access is NOT ownership — a
+     * Premium user may still buy the book to keep it after Premium
+     * ends (X5, AUD3-07).
+     */
+    public function ownsBook(User $user, Book $book): bool
+    {
+        // PERF-01: list endpoints preload the user's owned book IDs once
+        // (preloadOwnedBooks) instead of one `exists` query per book.
+        if ($this->ownedBookIds !== null && $this->ownedBookUserId === $user->id) {
+            return in_array($book->id, $this->ownedBookIds, true);
+        }
+
+        return $book->userBooks()->where('user_id', $user->id)->exists();
+    }
+
+    /**
      * May this user read the full book? Phase 2 rules (spec §2.3, A19):
      *  1. A bought/gifted/free entitlement (user_books) always reads —
      *     even when the book is taken_down (old buyers keep access).
@@ -158,7 +188,7 @@ class BookService
             return false;
         }
 
-        if ($book->userBooks()->where('user_id', $user->id)->exists()) {
+        if ($this->ownsBook($user, $book)) {
             return true;
         }
 
@@ -216,8 +246,27 @@ class BookService
     /** Premium trialing/active and not past its end (spec §2.2). */
     public function hasActivePremium(User $user): bool
     {
-        if (! class_exists(\App\Models\Subscription::class)
-            || ! Schema::hasTable('subscriptions')) {
+        // PERF-01: memoize per request — list endpoints call canRead()
+        // once per book, and the subscription lookup + hasTable check
+        // must not re-run for every book.
+        if (array_key_exists($user->id, $this->premiumMemo)) {
+            return $this->premiumMemo[$user->id];
+        }
+
+        $result = $this->lookupActivePremium($user);
+        $this->premiumMemo[$user->id] = $result;
+
+        return $result;
+    }
+
+    protected function lookupActivePremium(User $user): bool
+    {
+        if ($this->subscriptionsTableExists === null) {
+            $this->subscriptionsTableExists = class_exists(\App\Models\Subscription::class)
+                && Schema::hasTable('subscriptions');
+        }
+
+        if (! $this->subscriptionsTableExists) {
             return false;
         }
 
@@ -236,6 +285,18 @@ class BookService
             : $subscription->ends_at;
 
         return $end !== null && $end->isFuture();
+    }
+
+    /**
+     * PERF-01: preload the user's owned book IDs in ONE query so a
+     * list's per-book canRead() calls need no `user_books exists`
+     * query each. Call before mapping a list; single-book callers do
+     * not need it (canRead falls back to the per-book exists query).
+     */
+    public function preloadOwnedBooks(User $user): void
+    {
+        $this->ownedBookUserId = $user->id;
+        $this->ownedBookIds = \App\Models\UserBook::where('user_id', $user->id)->pluck('book_id')->all();
     }
 
     /** Book JSON-LD (spec §3.1): real fields only — no fake ISBN/rating. */

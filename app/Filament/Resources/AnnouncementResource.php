@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AnnouncementResource\Pages;
 use App\Models\Announcement;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DateTimePicker;
@@ -108,6 +109,7 @@ class AnnouncementResource extends BaseAdminResource
             ])
             ->actions([
                 EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 

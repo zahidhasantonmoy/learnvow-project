@@ -110,16 +110,35 @@ class AuthApiTest extends ApiTestCase
             ->assertStatus(429);
     }
 
+    public function test_login_throttle_is_per_phone_not_per_ip(): void
+    {
+        // SEC-02: 5 failed attempts for one phone must NOT lock out a
+        // different phone logging in from the same IP.
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/v1/auth/login', ['phone' => '01700000002', 'password' => 'wrong'])
+                ->assertUnauthorized();
+        }
+        $this->postJson('/api/v1/auth/login', ['phone' => '01700000002', 'password' => 'wrong'])
+            ->assertStatus(429);
+
+        $other = \App\Models\User::factory()->create(['phone' => '01700000009']);
+        $this->postJson('/api/v1/auth/login', ['phone' => '01700000009', 'password' => 'password'])
+            ->assertOk();
+    }
+
     public function test_login_throttle_allows_five_attempts_per_minute(): void
     {
         // Repro (QA N2): group throttle:60,1 + route throttle:5,1 shared
         // one counter, so each login consumed 2 hits and the 3rd attempt
         // was already 429. Spec §1.3: exactly 5/min for login.
+        // SEC-02: the strict 5/min limit is now per phone+IP in the
+        // controller; the route middleware is a loose per-IP cap (30/min),
+        // so the X-RateLimit headers show 30, not 5.
         for ($i = 0; $i < 5; $i++) {
             $this->postJson('/api/v1/auth/login', ['phone' => '01700000002', 'password' => 'wrong'])
                 ->assertUnauthorized()
-                ->assertHeader('X-RateLimit-Limit', '5')
-                ->assertHeader('X-RateLimit-Remaining', (string) (4 - $i));
+                ->assertHeader('X-RateLimit-Limit', '30')
+                ->assertHeader('X-RateLimit-Remaining', (string) (29 - $i));
         }
         $this->postJson('/api/v1/auth/login', ['phone' => '01700000002', 'password' => 'wrong'])
             ->assertStatus(429);

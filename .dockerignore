@@ -1,0 +1,25 @@
+# LearnVow — Docker build context exclusions.
+# Keep the image lean and never ship secrets or local-only junk.
+# Do NOT exclude anything the build needs (docker/, composer.json,
+# package.json, resources/, public/ source files stay included).
+.git
+.github
+node_modules
+vendor
+public/build
+public/storage
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/private/*
+storage/*.key
+storage/pail
+.env
+.env.*
+!.env.example
+database/*.sqlite
+tests
+.phpunit.result.cache
+.idea
+.vscode

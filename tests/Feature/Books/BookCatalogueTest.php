@@ -71,6 +71,64 @@ class BookCatalogueTest extends TestCase
         $response->assertDontSee('aggregateRating');
     }
 
+    public function test_book_detail_shows_buy_button_when_not_owned(): void
+    {
+        // UI-01: the detail page showed the price but no path to checkout.
+        $response = $this->get('/bn/books/the-prophet');
+        $response->assertOk();
+        $response->assertSee('/bn/checkout/the-prophet', false);
+        $response->assertSee('এখনই কিনুন', false);
+    }
+
+    public function test_book_detail_shows_read_button_when_owned(): void
+    {
+        // UI-02: an owned book must offer a direct path into the reader.
+        $reader = $this->reader();
+        UserBook::create([
+            'user_id' => $reader->id,
+            'book_id' => Book::where('slug', 'the-prophet')->firstOrFail()->id,
+            'source' => 'purchase',
+        ]);
+
+        $response = $this->actingAs($reader)->get('/bn/books/the-prophet');
+        $response->assertOk();
+        $response->assertSee('/bn/reader/the-prophet', false);
+        $response->assertSee('এখনই পড়ুন', false);
+        $response->assertDontSee('/bn/checkout/the-prophet', false);
+    }
+
+    public function test_library_cards_link_into_the_reader(): void
+    {
+        // UI-02: library cards linked only to the detail page.
+        $reader = $this->reader();
+        UserBook::create([
+            'user_id' => $reader->id,
+            'book_id' => Book::where('slug', 'the-prophet')->firstOrFail()->id,
+            'source' => 'purchase',
+        ]);
+
+        $response = $this->actingAs($reader)->get('/bn/library');
+        $response->assertOk();
+        $response->assertSee('/bn/reader/the-prophet', false);
+    }
+
+    public function test_profile_links_the_orphaned_phase4_screens(): void
+    {
+        // UI-03: for-you, goals, badges, preorders, request-book, taste,
+        // devices, community and clubs had no inbound link anywhere.
+        $reader = $this->reader();
+
+        $response = $this->actingAs($reader)->get('/bn/profile');
+        $response->assertOk();
+        foreach ([
+            '/bn/for-you', '/bn/reading-goals', '/bn/badges', '/bn/preorders',
+            '/bn/request-book', '/bn/profile/taste', '/bn/profile/devices',
+            '/bn/community', '/bn/clubs',
+        ] as $url) {
+            $response->assertSee($url, false, "Profile page does not link {$url}");
+        }
+    }
+
     public function test_free_books_page_lists_only_free_books_at_zero(): void
     {
         $response = $this->get('/bn/books/free');

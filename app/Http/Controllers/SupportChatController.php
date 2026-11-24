@@ -19,15 +19,35 @@ use Illuminate\View\View;
  */
 class SupportChatController extends Controller
 {
-    /** The reader's own tickets. */
+    /**
+     * The reader's own tickets — or, for the support role, the open
+     * ticket queue (AUD3-05: staff previously saw only "my tickets"
+     * and had to know a ticket's URL to work it).
+     */
     public function index(Request $request): View
     {
+        $user = $request->user();
+
+        if ($user->hasRole('support')) {
+            $tickets = SupportTicket::query()
+                ->whereIn('status', [
+                    SupportTicket::STATUS_OPEN,
+                    SupportTicket::STATUS_IN_PROGRESS,
+                    SupportTicket::STATUS_WAITING_REPLY,
+                    SupportTicket::STATUS_ESCALATED,
+                ])
+                ->orderByDesc('created_at')
+                ->paginate(20);
+
+            return view('support.chat', ['tickets' => $tickets, 'isQueue' => true]);
+        }
+
         $tickets = SupportTicket::query()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $user->id)
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return view('support.chat', ['tickets' => $tickets]);
+        return view('support.chat', ['tickets' => $tickets, 'isQueue' => false]);
     }
 
     /** Open a new ticket (first message = the opening text). */

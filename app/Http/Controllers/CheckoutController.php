@@ -23,7 +23,10 @@ class CheckoutController extends Controller
             return redirect()->route('books.show', ['locale' => app()->getLocale(), 'slug' => $book->slug])
                 ->with('status', __('billing.author_cannot_buy_own'));
         }
-        if ($books->canRead($user, $book)) {
+        // AUD3-07 / X5: only a PURCHASE blocks re-buying. A Premium user
+        // can read the book via Premium but does not OWN it — buying
+        // gives permanent ownership that survives Premium ending.
+        if ($books->ownsBook($user, $book)) {
             return redirect()->route('books.show', ['locale' => app()->getLocale(), 'slug' => $book->slug])
                 ->with('status', __('billing.already_own_book'));
         }
@@ -84,7 +87,7 @@ class CheckoutController extends Controller
      * Create the order (and TrxID when a payment is due). The Livewire
      * CheckoutForm posts here; pricing is recomputed server-side.
      */
-    public function store(string $locale, Request $request, BillingService $billing)
+    public function store(string $locale, Request $request, BillingService $billing, BookService $books)
     {
         $data = $request->validate([
             'type' => 'required|in:book,premium,gift,wallet_topup',
@@ -106,9 +109,24 @@ class CheckoutController extends Controller
             if ($authorId !== null && (int) $book->author_id === (int) $authorId) {
                 return back()->with('status', __('billing.author_cannot_buy_own'));
             }
+            // AUD3-07: same purchase-ownership guard as the checkout
+            // page — a direct POST must not re-buy an owned book.
+            // (Gift purchases are for someone else, so they are exempt.)
+            if ($data['type'] === 'book' && $books->ownsBook($user, $book)) {
+                return back()->with('status', __('billing.already_own_book'));
+            }
         }
 
         $priced = $billing->priceOrder($data);
+
+        // AUD3-02: validate a supplied TrxID BEFORE creating the order —
+        // a bad TrxID used to leave an orphan pending_payment order.
+        // (An empty TrxID is allowed: the order is created and the user
+        // submits the TrxID on the fix-TrxID page.)
+        if (! empty($data['trx_id']) && ! BillingService::isValidTrxId($data['trx_id'])) {
+            return back()->withErrors(['trx_id' => __('billing.trxid_invalid')])->withInput();
+        }
+
         $order = $billing->createOrder($user, $priced);
 
         if ($order->total_bdt === 0) {

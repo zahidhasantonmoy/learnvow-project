@@ -433,11 +433,16 @@ class PayoutService
             throw new InvalidArgumentException("Only a pending payout can be approved (status: {$payout->status}).");
         }
 
-        $payout->update([
-            'status' => AuthorPayout::STATUS_APPROVED,
-            'approved_by' => $admin->id,
-            'approved_at' => now(),
-        ]);
+        // EB-08: status flip in a transaction; the notification goes
+        // AFTER the commit, so a notify failure can never roll the flip
+        // back silently — and the flip itself is never half-done.
+        DB::transaction(function () use ($payout, $admin) {
+            $payout->update([
+                'status' => AuthorPayout::STATUS_APPROVED,
+                'approved_by' => $admin->id,
+                'approved_at' => now(),
+            ]);
+        });
 
         $this->notifyAuthor($payout, 'payout_approved', [
             'payout_id' => $payout->id, 'period' => $payout->period,
@@ -464,11 +469,14 @@ class PayoutService
             throw new InvalidArgumentException('A valid payout TrxID is required to release a payout.');
         }
 
-        $payout->update([
-            'status' => AuthorPayout::STATUS_PAID,
-            'payout_trx_id' => $trxId,
-            'paid_at' => now(),
-        ]);
+        // EB-08: status flip in a transaction; notification after commit.
+        DB::transaction(function () use ($payout, $trxId) {
+            $payout->update([
+                'status' => AuthorPayout::STATUS_PAID,
+                'payout_trx_id' => $trxId,
+                'paid_at' => now(),
+            ]);
+        });
 
         $this->notifyAuthor($payout, 'payout_released', [
             'payout_id' => $payout->id, 'period' => $payout->period,
@@ -485,10 +493,13 @@ class PayoutService
             throw new InvalidArgumentException("Only a pending or approved payout can fail (status: {$payout->status}).");
         }
 
-        $payout->update([
-            'status' => AuthorPayout::STATUS_FAILED,
-            'failure_reason' => $reason,
-        ]);
+        // EB-08: status flip in a transaction; notification after commit.
+        DB::transaction(function () use ($payout, $reason) {
+            $payout->update([
+                'status' => AuthorPayout::STATUS_FAILED,
+                'failure_reason' => $reason,
+            ]);
+        });
 
         $this->notifyAuthor($payout, 'payout_failed', [
             'payout_id' => $payout->id, 'period' => $payout->period,
@@ -508,10 +519,12 @@ class PayoutService
             throw new InvalidArgumentException("Only a failed payout can be retried (status: {$payout->status}).");
         }
 
-        $payout->update([
-            'status' => AuthorPayout::STATUS_PENDING,
-            'retry_count' => (int) $payout->retry_count + 1,
-        ]);
+        DB::transaction(function () use ($payout) {
+            $payout->update([
+                'status' => AuthorPayout::STATUS_PENDING,
+                'retry_count' => (int) $payout->retry_count + 1,
+            ]);
+        });
     }
 
     /**

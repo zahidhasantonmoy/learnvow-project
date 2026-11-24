@@ -256,6 +256,13 @@ class AuthorService
             throw new InvalidArgumentException('Prices must be zero or more.');
         }
 
+        // EB-09: server-side mirror of the editor rules — unbounded
+        // prices break catalogue integrity. (The list < sale check
+        // below already exists in this publish path.)
+        if ($price > 100000 || ($listPrice !== null && $listPrice > 100000)) {
+            throw new InvalidArgumentException('Prices must be at most ৳100,000.');
+        }
+
         if ($listPrice !== null && $listPrice > 0 && $listPrice < $price) {
             throw new InvalidArgumentException('List price cannot be below the sale price.');
         }
@@ -371,6 +378,16 @@ class AuthorService
 
         if ($price < 0 || ($listPrice !== null && $listPrice < 0)) {
             throw new InvalidArgumentException('Prices must be zero or more.');
+        }
+
+        // EB-09: server-side mirror of the editor rules — a sale price
+        // above the list price would show a "discount" that costs more,
+        // and unbounded prices break catalogue integrity.
+        if ($price > 100000 || ($listPrice !== null && $listPrice > 100000)) {
+            throw new InvalidArgumentException('Prices must be at most ৳100,000.');
+        }
+        if ($listPrice !== null && $listPrice < $price) {
+            throw new InvalidArgumentException('The list price must be at least the sale price.');
         }
 
         $book->price_bdt = $price;
@@ -667,6 +684,42 @@ class AuthorService
                 ->orderByDesc('orders.created_at')
                 ->limit(10)
                 ->get(['order_items.title_snapshot as title', 'order_items.quantity', 'order_items.unit_price_bdt', 'orders.created_at', 'users.country']);
+        }
+
+        // UI-14: the demo opening balance (seeded author_earnings rows,
+        // type=adjustment, order_id NULL) sums into sales_bdt but has no
+        // paid orders — so "Recent sales" showed "No sales yet" under
+        // ৳49,276 of earnings. When no paid-order rows exist, list the
+        // earnings rows themselves (same shape as above) so the list
+        // matches the total; the empty state then only shows when there
+        // really are no earnings at all.
+        if ($recentSales->isEmpty() && Schema::hasTable('author_earnings')) {
+            $rows = DB::table('author_earnings')
+                ->join('books', 'books.id', '=', 'author_earnings.book_id')
+                ->where('author_earnings.author_id', $author->id)
+                ->whereIn('author_earnings.type', ['sale', 'adjustment'])
+                ->orderByDesc('author_earnings.created_at')
+                ->limit(10)
+                ->get([
+                    'books.title as title',
+                    'author_earnings.amount_bdt as unit_price_bdt',
+                    'author_earnings.created_at',
+                ]);
+
+            // author_earnings.amount_bdt is ALREADY the author's share,
+            // while the blade computes the share as unit_price × share%.
+            // Gross the amount back up so the displayed share lands on
+            // the stored figure instead of 80% of 80%.
+            $share = (int) $author->revenue_share_pct;
+            $recentSales = $rows->map(function ($row) use ($share) {
+                $row->quantity = 1;
+                $row->country = null;
+                if ($share > 0) {
+                    $row->unit_price_bdt = (int) round(((int) $row->unit_price_bdt) * 100 / $share);
+                }
+
+                return $row;
+            });
         }
 
         return [

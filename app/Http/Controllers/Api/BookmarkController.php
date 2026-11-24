@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Book;
 use App\Models\Bookmark;
+use App\Services\BookService;
 use App\Services\ReaderService;
 use Illuminate\Http\Request;
 
@@ -18,8 +19,14 @@ class BookmarkController extends ApiController
         ])->values());
     }
 
-    public function store(Request $request, Book $book, ReaderService $reader)
+    public function store(Request $request, Book $book, ReaderService $reader, BookService $books)
     {
+        // SEC-08: same canRead gate as saveProgress/file/download — a
+        // user must be able to read the book to annotate it.
+        if (! $books->canRead($request->user(), $book)) {
+            return $this->fail(__('api.cannot_read'), 403);
+        }
+
         $data = $request->validate(['cfi' => 'required|string|max:500', 'label' => 'nullable|string|max:255']);
         $bookmark = $reader->addBookmark($request->user(), $book, $data['cfi'], $data['label'] ?? null);
 

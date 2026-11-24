@@ -96,9 +96,16 @@ class PayoutResource extends BaseAdminResource
             ->sum('total_bdt');
 
         if (SchemaFacade::hasTable('orders')) {
+            // Database-agnostic year/month filter (was SQLite-only
+            // strftime('%Y-%m', ...), which breaks on MySQL/Postgres).
+            $parts = explode('-', $period);
+            $year = isset($parts[0]) && is_numeric($parts[0]) ? (int) $parts[0] : (int) now()->format('Y');
+            $month = isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : (int) now()->format('m');
+
             $collected = (int) DB::table('orders')
                 ->where('status', 'paid')
-                ->whereRaw("strftime('%Y-%m', created_at) = ?", [$period])
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
                 ->sum('total_bdt');
             $figures['collected'] = $collected;
             $figures['pool'] = (int) floor($collected * 0.8);

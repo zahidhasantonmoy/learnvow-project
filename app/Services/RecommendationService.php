@@ -39,9 +39,13 @@ class RecommendationService
             $results[] = ['book' => $book, 'reason' => $reason];
         };
 
+        // PERF-04: cap the finished history — the category/author rules
+        // only need a recent slice, not the user's entire lifetime.
         $finished = ReadingProgress::where('user_id', $user->id)
             ->whereNotNull('finished_at')
             ->with('book')
+            ->orderByDesc('finished_at')
+            ->limit(100)
             ->get();
 
         $finishedCategoryIds = $finished->map(fn ($p) => $p->book?->category_id)

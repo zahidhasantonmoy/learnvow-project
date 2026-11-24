@@ -8,6 +8,7 @@ return [
     'cannot_read' => 'এই বইটি পড়ার অধিকার আপনার নেই।',
     'book_required' => 'বই বাছাই করুন।',
     'author_cannot_buy_own' => 'লেখক নিজের বই কিনতে পারবেন না।',
+    'already_own_book' => 'এই বইটি আপনার আগেই আছে।',
     'already_premium' => 'আপনার Premium আগেই চালু আছে।',
     'collections_limit' => 'একজন ব্যবহারকারী সর্বোচ্চ ২০টি তাক বানাতে পারবেন।',
     'collection_name_taken' => 'এই নামে একটি তাক আগেই আছে।',
@@ -18,4 +19,5 @@ return [
     'vocabulary_unavailable' => 'শব্দভাণ্ডার এখনো চালু হয়নি।',
     'print_unavailable' => 'প্রিন্ট অর্ডার এখনো চালু হয়নি।',
     'recommended_popular' => 'জনপ্রিয় বই',
+    'not_found' => 'পাওয়া যায়নি।',
 ];

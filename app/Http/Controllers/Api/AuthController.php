@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Services\AuthService;
 use App\Services\DeviceService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 /** Sanctum auth (spec §1.2–1.3): register / login / logout / me. */
 class AuthController extends ApiController
@@ -53,15 +55,28 @@ class AuthController extends ApiController
             'device_name' => 'nullable|string|max:100',
         ]);
 
+        // SEC-02: strict limit is per phone+IP (5/min), like the web
+        // LoginForm — the route middleware only caps per-IP (30/min).
+        $key = 'api-login:'.Str::lower($data['phone']).'|'.$request->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return response()->json([
+                'message' => 'Too Many Attempts.',
+                'meta' => ['locale' => app()->getLocale()],
+            ], 429, ['Retry-After' => RateLimiter::availableIn($key)]);
+        }
+
         // AuthService::login() without the web-device hook (API registers
         // its own device below). Credentials + blocked-status checks live there.
         $result = $auth->login($data['phone'], $data['password'], false, false);
         if (! $result['ok']) {
+            RateLimiter::hit($key, 60);
+
             return $this->fail(
                 $result['error'] === 'blocked' ? __('api.account_blocked') : __('api.invalid_credentials'),
                 $result['error'] === 'blocked' ? 403 : 401
             );
         }
+        RateLimiter::clear($key);
         $user = $result['user'];
 
         $deviceName = $data['device_name'] ?? $this->defaultDeviceName($request);

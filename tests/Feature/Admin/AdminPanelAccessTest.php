@@ -108,6 +108,38 @@ class AdminPanelAccessTest extends TestCase
         $this->actingAs($this->superAdmin)->get('/admin/settings')->assertOk();
     }
 
+    public function test_super_admin_can_open_backup_page(): void
+    {
+        // EB-01/ADM-01: the Backup page 500'd on a wrong Placeholder
+        // import (Filament\Schemas\Components\Placeholder does not exist).
+        $this->actingAs($this->superAdmin)->get('/admin/backup')->assertOk();
+    }
+
+    public function test_admin_cannot_open_backup_page(): void
+    {
+        $this->actingAs($this->admin)->get('/admin/backup')->assertForbidden();
+    }
+
+    public function test_admin_cannot_open_super_admin_user_record(): void
+    {
+        // ADM-02: an Admin used to open the Super Admin's record in a
+        // fully editable form. Both view and edit are now 403, and the
+        // owner's record is unchanged.
+        $this->actingAs($this->admin)
+            ->get("/admin/users/{$this->superAdmin->id}/edit")->assertForbidden();
+        $this->actingAs($this->admin)
+            ->get("/admin/users/{$this->superAdmin->id}")->assertForbidden();
+
+        $this->assertDatabaseHas('users', ['id' => $this->superAdmin->id]);
+        $this->assertTrue($this->superAdmin->fresh()->hasRole('super-admin'));
+    }
+
+    public function test_super_admin_can_open_own_user_record(): void
+    {
+        $this->actingAs($this->superAdmin)
+            ->get("/admin/users/{$this->superAdmin->id}/edit")->assertOk();
+    }
+
     public function test_reader_cannot_open_any_resource_list(): void
     {
         foreach (['books', 'authors', 'users', 'categories', 'reviews', 'roles'] as $resource) {

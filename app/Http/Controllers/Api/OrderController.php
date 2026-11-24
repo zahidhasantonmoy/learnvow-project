@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Order;
 use App\Services\BillingService;
+use App\Services\BookService;
 use Illuminate\Http\Request;
 
 /** Orders + manual TrxID (spec §1.3). Prices recomputed server-side — never trusted from the client. */
 class OrderController extends ApiController
 {
-    public function store(Request $request, BillingService $billing)
+    public function store(Request $request, BillingService $billing, BookService $books)
     {
         $data = $request->validate([
             'type' => 'required|in:book,premium,gift,wallet_topup',
@@ -30,6 +31,13 @@ class OrderController extends ApiController
             $authorId = \DB::table('authors')->where('user_id', $user->id)->value('id');
             if ($authorId !== null && (int) $book->author_id === (int) $authorId) {
                 return $this->fail(__('api.author_cannot_buy_own'), 422);
+            }
+            // AUD3-07 (API follow-up): same purchase-ownership guard as
+            // the web checkout — a book owned via PURCHASE cannot be
+            // bought again. Premium-only access is NOT ownership (X5),
+            // so it does not block; gifts are for someone else, exempt.
+            if ($data['type'] === 'book' && $books->ownsBook($user, $book)) {
+                return $this->fail(__('api.already_own_book'), 422);
             }
         }
         if ($data['type'] === 'premium' && $billing->hasActivePremium($user)) {

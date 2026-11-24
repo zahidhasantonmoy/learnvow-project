@@ -28,8 +28,9 @@ use Illuminate\Support\Facades\Route;
 | LearnVow Sanctum API — Phase 4 (Builder B owns this file).
 | Spec: docs/laravel-phase4-build-spec.md §1.3, §14.1.
 | All routes under /api/v1/, throttle 60/min; auth:sanctum except
-| login/register. Login has its own strict throttle:5,1 with a distinct
-| prefix (api-login / api-register) so it does not share the group
+| login/register. Login has a loose per-IP route cap (30/min,
+| api-login-ip) plus a strict per-phone+IP 5/min limit inside
+| AuthController::login (SEC-02), so it does not share the group
 | 60/min counter — without the prefix each attempt consumed 2 hits
 | against the 5-limit (QA N2).
 |--------------------------------------------------------------------------
@@ -39,7 +40,11 @@ use Illuminate\Support\Facades\Route;
 // no locale prefix in the URL (spec §1.3).
 Route::prefix('v1')->middleware(['throttle:60,1', SetApiLocale::class])->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:5,1,api-register');
-    Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1,api-login');
+    // SEC-02: the per-IP route cap is deliberately loose (30/min); the
+    // strict 5/min limit is per phone+IP inside AuthController::login
+    // (mirrors the web LoginForm), so one user's failures never lock
+    // out everyone behind a shared IP.
+    Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:30,1,api-login-ip');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);

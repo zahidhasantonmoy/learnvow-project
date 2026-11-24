@@ -9,4 +9,6 @@ return [
     'removed' => 'Device removed',
     'remove_confirm' => 'Remove this device? Its token will also be deleted.',
     'inactive_90' => 'Inactive 90+ days',
+    'web' => 'Web',
+    'app' => 'App',
 ];

@@ -49,6 +49,8 @@ return [
     'payment_number_not_set' => 'Payment number is not set yet — please contact the owner.',
     'order_created_submit_trxid' => 'Order created — now submit the TrxID.',
     'trxid_submitted' => 'TrxID submitted. Access will start once it is verified.',
+    'trxid_invalid' => 'TrxID format is invalid.',
+    'gift_code_not_found' => 'Gift code not found.',
     'author_cannot_buy_own' => 'An author cannot buy their own book.',
     'already_own_book' => 'You already own this book.',
     'already_premium' => 'Premium is already active on your account.',
@@ -59,6 +61,7 @@ return [
     'fix_count' => 'Fixed: :count/3 times',
     'fix_limit_reached' => 'You have fixed this 3 times already — please contact support.',
     'fix_trxid_submit' => 'Submit new TrxID',
+    'trxid_not_correctable' => 'This order is already paid — the TrxID can no longer be corrected.',
 
     // Payment hub / orders
     'payment_title' => 'Payment',

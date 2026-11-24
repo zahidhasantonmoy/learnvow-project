@@ -13,6 +13,10 @@
 
     <p>{{ __('auth.otp_hint') }}</p>
 
+    @if(app()->environment('local') && session('dev_otp_code'))
+        <p><strong>{{ __('auth.dev_otp_code') }} {{ session('dev_otp_code') }}</strong></p>
+    @endif
+
     <button type="submit" class="btn">{{ __('auth.verify_button') }}</button>
     <button type="button" class="btn btn-secondary" wire:click="resend">{{ __('auth.resend_otp') }}</button>
 </form>

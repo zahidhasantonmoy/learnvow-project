@@ -19,6 +19,14 @@ class WalletTopup extends Component
         $this->error = null;
         $user = auth()->user();
 
+        // AUD3-02: validate the TrxID format BEFORE creating the order —
+        // a bad TrxID used to leave an orphan pending_payment order.
+        if (! BillingService::isValidTrxId($this->trxId)) {
+            $this->error = __('billing.trxid_invalid');
+
+            return null;
+        }
+
         try {
             $priced = $billing->priceOrder(['user' => $user, 'type' => 'wallet_topup', 'topup_amount_bdt' => $this->amount]);
             $order = $billing->createOrder($user, $priced);

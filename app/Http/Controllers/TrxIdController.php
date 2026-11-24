@@ -17,6 +17,16 @@ class TrxIdController extends Controller
         Gate::authorize('view', $order);
         $payment = $order->payments()->latest()->first();
 
+        // AUD3-03: the correction form used to render for an already-paid
+        // order even though the server guard refuses any correction there.
+        // Redirect to the order instead of showing a useless form.
+        $correctable = $order->status === 'pending_payment'
+            || ($payment !== null && in_array($payment->status, ['awaiting_verification', 'failed'], true));
+        if (! $correctable) {
+            return redirect()->route('orders.show', ['locale' => $locale, 'order' => $order->id])
+                ->with('status', __('billing.trxid_not_correctable'));
+        }
+
         return view('checkout.fix-trxid', [
             'order' => $order,
             'payment' => $payment,

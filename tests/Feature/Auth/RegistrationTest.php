@@ -43,7 +43,11 @@ class RegistrationTest extends TestCase
         $this->assertSame('bn', $user->locale);
         $this->assertSame('active', $user->status);
         $this->assertTrue($user->hasRole('reader'));
-        $this->assertAuthenticatedAs($user);
+        // N1 (re-QA 2026-11-24): registration must NOT log the user in
+        // before OTP — the account stays a guest, unverified, until the
+        // code is verified on the OTP page.
+        $this->assertGuest();
+        $this->assertNull($user->phone_verified_at);
     }
 
     public function test_registration_uses_locale_from_url_prefix(): void
