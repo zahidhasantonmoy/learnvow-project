@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\BuildsSeo;
+use App\Models\Faq;
 
 class PageController extends Controller
 {
@@ -30,6 +31,12 @@ class PageController extends Controller
 
     public function help()
     {
-        return view('pages.help', ['seo' => $this->seo(__('books.help_title'))]);
+        // Role-audit Medium-2 fix: Support-written FAQs were dead content —
+        // no route/controller/view ever queried the Faq model. Active FAQs
+        // are now rendered below the static sections, grouped by category.
+        return view('pages.help', [
+            'seo' => $this->seo(__('books.help_title')),
+            'faqsByCategory' => Faq::active()->get()->groupBy('category'),
+        ]);
     }
 }

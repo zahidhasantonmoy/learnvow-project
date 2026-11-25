@@ -15,6 +15,9 @@ class LoginForm extends Component
 
     public bool $remember = false;
 
+    /** True when the last failure was the device limit (not a bad password). */
+    public bool $deviceLimitReached = false;
+
     /** Locale captured at mount (page render runs inside the {locale} group). */
     public string $locale = 'bn';
 
@@ -25,6 +28,8 @@ class LoginForm extends Component
 
     public function login(AuthService $auth)
     {
+        $this->deviceLimitReached = false;
+
         $this->validate([
             'phone' => ['required', 'string'],
             'password' => ['required', 'string'],
@@ -43,6 +48,17 @@ class LoginForm extends Component
 
         if (! $result['ok']) {
             RateLimiter::hit($key, 60);
+
+            // Medium-1 (a): the device limit is a distinct failure — it
+            // only ever appears after a CORRECT password (AuthService
+            // checks the password first), so naming it leaks nothing.
+            // 'credentials' and 'blocked' keep the generic message.
+            if (($result['error'] ?? null) === 'device_limit_reached') {
+                $this->deviceLimitReached = true;
+                $this->addError('phone', __('auth.device_limit'));
+
+                return;
+            }
 
             $this->addError('phone', __('auth.login_failed'));
 

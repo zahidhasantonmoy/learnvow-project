@@ -8,5 +8,8 @@
   @else
     <button type="button" wire:click="submit">{{ __('payouts.request_button') }}</button>
   @endif
+  @if($error)
+    <p role="alert">{{ $error }}</p>
+  @endif
   <p>{{ __('payouts.request_note') }}</p>
 </div>

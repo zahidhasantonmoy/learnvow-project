@@ -169,7 +169,31 @@ class BookService
     }
 
     /**
+     * Is this user the book's author? (books.author → authors.user_id).
+     * Own-book preview (Low-2) and the own-book pool exclusion both
+     * key off this — never off a role name.
+     */
+    public function isOwnBook(?User $user, Book $book): bool
+    {
+        if ($user === null || $book->author_id === null) {
+            return false;
+        }
+
+        $author = $book->author;
+
+        return $author !== null && $author->user_id !== null
+            && (int) $author->user_id === (int) $user->id;
+    }
+
+    /**
      * May this user read the full book? Phase 2 rules (spec §2.3, A19):
+     *  0. The book's own author may PREVIEW it in the reader (Low-2,
+     *     role audit 2026-11-25) — published AND in_review (this check
+     *     sits before the status gate, so both are covered by the same
+     *     code path; taken_down/paused own books open the same way).
+     *     Own-book reads never count toward pool earnings: see
+     *     ReaderService::saveProgress() (skips the minutes ledger) and
+     *     PayoutService::closePeriod() (re-checks at close time).
      *  1. A bought/gifted/free entitlement (user_books) always reads —
      *     even when the book is taken_down (old buyers keep access).
      *  2. A published free book reads for any logged-in user.
@@ -189,6 +213,11 @@ class BookService
         }
 
         if ($this->ownsBook($user, $book)) {
+            return true;
+        }
+
+        // Low-2: author preview of their own book (see rule 0 above).
+        if ($this->isOwnBook($user, $book)) {
             return true;
         }
 

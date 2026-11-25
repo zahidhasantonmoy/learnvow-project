@@ -21,6 +21,9 @@ class PayoutRequest extends Component
 
     public bool $notified = false;
 
+    /** Shown when the request is rejected (balance below the ৳500 minimum). */
+    public ?string $error = null;
+
     public function mount(PayoutService $payout): void
     {
         $author = $this->author();
@@ -46,6 +49,24 @@ class PayoutRequest extends Component
             return;
         }
 
+        // Low-1 (role audit 2026-11-25): reject below the ৳500 minimum
+        // at request time — no notice is recorded and `requested` stays
+        // false; the balance carries forward to next month.
+        $balance = $payout->authorBalance($author);
+        $minimum = $payout->minimumPayout();
+
+        if ($balance < $minimum) {
+            $this->error = __('payouts.request_minimum', [
+                'min' => number_format($minimum),
+                'balance' => number_format($balance),
+            ]);
+            $this->requested = false;
+            $this->balance = $balance;
+
+            return;
+        }
+
+        $this->error = null;
         $this->notified = $payout->recordPayoutRequest($author, auth()->user());
         $this->requested = true;
         $this->balance = $payout->authorBalance($author);

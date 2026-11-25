@@ -49,6 +49,11 @@ class AuthController extends Controller
         return view('auth.forgot-password', ['seo' => $this->seo('auth.forgot_title', 'auth.forgot_description', '/forgot-password')]);
     }
 
+    public function showRemoveDevice(): View
+    {
+        return view('auth.remove-device', ['seo' => $this->seo('auth.device_removal_title', 'auth.device_removal_description', '/remove-device')]);
+    }
+
     public function showResetPassword(): View
     {
         return view('auth.reset-password', ['seo' => $this->seo('auth.reset_title', 'auth.reset_description', '/reset-password')]);

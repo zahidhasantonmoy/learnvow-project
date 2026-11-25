@@ -527,6 +527,12 @@ class PayoutService
         });
     }
 
+    /** Minimum accrued balance for a payout request (spec §2.5): ৳500 by default. Below this the balance carries forward. */
+    public function minimumPayout(): int
+    {
+        return $this->settingInt('pool.min_payout_bdt', 500);
+    }
+
     /**
      * Author's accrued balance (spec §2.5): all earnings − all PAID payouts.
      * Always recomputed from the DB, in a transaction by the caller when
@@ -548,9 +554,20 @@ class PayoutService
      * in-app (database) notification when the notifications table exists
      * (Builder C, Phase 3 §7.15); without it the request is still accepted
      * and shown as requested. Returns true when a notice was stored.
+     *
+     * Low-1 (role audit 2026-11-25): the ৳500 minimum
+     * (pool.min_payout_bdt) is enforced HERE, at request time — a
+     * balance below the minimum is rejected (returns false, no
+     * notification) and carries forward to next month. The monthly
+     * closePeriod batch still applies the same minimum; this gate only
+     * stops the premature notice.
      */
     public function recordPayoutRequest(Author $author, User $user): bool
     {
+        if ($this->authorBalance($author) < $this->minimumPayout()) {
+            return false;
+        }
+
         if (! Schema::hasTable('notifications')) {
             return false;
         }

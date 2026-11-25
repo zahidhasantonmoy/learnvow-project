@@ -68,6 +68,21 @@ class AuthorEarningController extends Controller
 
         Gate::authorize('viewAny', AuthorEarning::class);
 
+        // Low-1 (role audit 2026-11-25): same ৳500 minimum as the
+        // Livewire component — below it the request is rejected (no
+        // notice) and the balance carries forward, never "sent".
+        $minimum = $payout->minimumPayout();
+        $balance = $payout->authorBalance($author);
+
+        if ($balance < $minimum) {
+            return back()->withErrors([
+                'payout' => __('payouts.request_minimum', [
+                    'min' => number_format($minimum),
+                    'balance' => number_format($balance),
+                ]),
+            ]);
+        }
+
         $payout->recordPayoutRequest($author, $request->user());
 
         return back()->with('status', __('payouts.request_sent'));
