@@ -66,6 +66,7 @@ return [
     // Payout request (Livewire)
     'request_button' => 'Request a payout',
     'request_sent' => 'Payout request sent. The monthly payout runs with or without a request.',
+    'request_minimum' => 'Minimum payout is ৳:min. Your balance is ৳:balance, so it will carry forward to next month.',
     'request_balance' => 'Accrued balance: ৳:amount',
     'request_next' => 'Next payout: :date',
     'request_note' => 'A request is only a notice — the monthly payout runs on its scheduled day anyway.',

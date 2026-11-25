@@ -21,6 +21,14 @@ class ReviewController extends Controller
             ])->withInput();
         }
 
+        // Low-2 consequence: canRead() now admits the book's own author
+        // (preview) — an author must still never review their own book.
+        if ($books->isOwnBook($user, $book)) {
+            return back()->withErrors([
+                'review' => __('books.review_own_book'),
+            ])->withInput();
+        }
+
         $validated = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'title' => ['nullable', 'string', 'max:255'],

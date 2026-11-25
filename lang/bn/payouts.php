@@ -66,6 +66,7 @@ return [
     // Payout request (Livewire)
     'request_button' => 'পেআউটের অনুরোধ করুন',
     'request_sent' => 'পেআউটের অনুরোধ পাঠানো হয়েছে। মাসিক পেআউট অনুরোধ ছাড়াও চলবে।',
+    'request_minimum' => 'সর্বনিম্ন পেআউট ৳:min। আপনার ব্যালেন্স ৳:balance, তাই এটি পরের মাসে জমা হবে।',
     'request_balance' => 'জমা ব্যালেন্স: ৳:amount',
     'request_next' => 'পরের পেআউট: :date',
     'request_note' => 'অনুরোধ শুধু একটি জানানো — মাসিক পেআউট নির্ধারিত দিনে এমনিতেই চলবে।',

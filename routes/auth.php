@@ -19,6 +19,8 @@ Route::middleware('guest')->group(function () {
     Route::get('otp', [AuthController::class, 'showOtp'])->name('otp');
     Route::get('forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.forgot');
     Route::get('reset-password', [AuthController::class, 'showResetPassword'])->name('password.reset');
+    // Medium-1 (c): login-free OTP device removal for locked-out users.
+    Route::get('remove-device', [AuthController::class, 'showRemoveDevice'])->name('devices.remove');
 });
 
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');

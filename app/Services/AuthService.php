@@ -37,6 +37,9 @@ class AuthService
     /** OTP purpose: password reset. */
     public const OTP_PURPOSE_RESET = 'password_reset';
 
+    /** OTP purpose: self-service device removal (role-audit Medium-1 fix). */
+    public const OTP_PURPOSE_DEVICE = 'device_removal';
+
     /**
      * Attempt a phone + password login.
      *
@@ -124,9 +127,11 @@ class AuthService
     /**
      * Verify a 6-digit OTP against the stored hash. Single-use: the code
      * is invalidated on success and after OTP_MAX_ATTEMPTS failures.
-     * On success the user's phone is marked verified.
+     * On success the user's phone is marked verified, unless
+     * $markPhoneVerified is false (device removal proves ownership of
+     * the phone already — it must not change verification state).
      */
-    public function verifyOtp(string $phone, string $code, string $purpose = self::OTP_PURPOSE_VERIFY): bool
+    public function verifyOtp(string $phone, string $code, string $purpose = self::OTP_PURPOSE_VERIFY, bool $markPhoneVerified = true): bool
     {
         if (! preg_match('/^\d{6}$/', $code)) {
             return false;
@@ -178,7 +183,7 @@ class AuthService
             'purpose' => $purpose,
         ]);
 
-        if ($user->phone_verified_at === null) {
+        if ($markPhoneVerified && $user->phone_verified_at === null) {
             $user->forceFill(['phone_verified_at' => now()])->save();
         }
 

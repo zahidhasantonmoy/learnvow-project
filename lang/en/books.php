@@ -52,6 +52,7 @@ return [
     'submit_review' => 'Submit review',
     'review_submitted_pending' => 'Your review is submitted — it will appear after approval.',
     'review_requires_entitlement' => 'To write a review, the book must be in your library.',
+    'review_own_book' => 'You cannot review your own book.',
     'review_pending_notice' => 'Your review is waiting for approval.',
     'related_books' => 'Similar books',
     'add_to_wishlist' => 'Add to wishlist',
@@ -107,6 +108,8 @@ return [
     'help_payment_body' => 'Payment is manual via bKash/Nagad — verified with your TrxID.',
     'help_contact_heading' => 'Contact',
     'help_contact_body' => 'For more help, write to us from the help page.',
+    'help_faq_heading' => 'Frequently asked questions',
+    'help_faq_general' => 'General',
     'copies_sold' => ':count copies sold',
 
     'collections_title' => 'My Shelves',

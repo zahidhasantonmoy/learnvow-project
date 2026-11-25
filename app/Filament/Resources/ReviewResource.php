@@ -17,7 +17,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
 
 /**
@@ -34,6 +36,32 @@ class ReviewResource extends BaseAdminResource
     protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    /**
+     * Role-audit Low-3 fix: Support may LIST and VIEW reviews (roles doc:
+     * "review reported books/reviews") but never moderate them. Create and
+     * edit stay admin-only via BaseAdminResource; delete stays Super Admin
+     * only. The approve/reject/hide actions below are additionally hidden
+     * from Support — AdminService::moderateReview already refuses them
+     * (canModerateReviews is admin-only), so this only fixes the UI.
+     */
+    public static function getViewAnyAuthorizationResponse(): Response
+    {
+        $user = static::currentUser();
+
+        return static::allowOrDeny(
+            $user !== null && AdminService::userHasRole($user, ['support', 'admin', 'super-admin'])
+        );
+    }
+
+    public static function getViewAuthorizationResponse(Model $record): Response
+    {
+        $user = static::currentUser();
+
+        return static::allowOrDeny(
+            $user !== null && AdminService::userHasRole($user, ['support', 'admin', 'super-admin'])
+        );
+    }
 
     public static function getModelLabel(): string
     {
@@ -154,21 +182,21 @@ class ReviewResource extends BaseAdminResource
                     ->label(__('admin.actions.approve'))
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn (Review $record) => in_array($record->status, ['pending', 'hidden', 'rejected'], true))
+                    ->visible(fn (Review $record) => AdminService::isAdmin(auth()->user()) && in_array($record->status, ['pending', 'hidden', 'rejected'], true))
                     ->action(fn (Review $record) => app(AdminService::class)->moderateReview($record, 'approved', auth()->user()))
                     ->successNotificationTitle(__('admin.actions.approved')),
                 Action::make('reject')
                     ->label(__('admin.actions.reject'))
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
-                    ->visible(fn (Review $record) => in_array($record->status, ['pending', 'approved', 'hidden'], true))
+                    ->visible(fn (Review $record) => AdminService::isAdmin(auth()->user()) && in_array($record->status, ['pending', 'approved', 'hidden'], true))
                     ->action(fn (Review $record) => app(AdminService::class)->moderateReview($record, 'rejected', auth()->user()))
                     ->successNotificationTitle(__('admin.actions.rejected')),
                 Action::make('hide')
                     ->label(__('admin.actions.hide'))
                     ->icon('heroicon-o-eye-slash')
                     ->color('warning')
-                    ->visible(fn (Review $record) => in_array($record->status, ['pending', 'approved'], true))
+                    ->visible(fn (Review $record) => AdminService::isAdmin(auth()->user()) && in_array($record->status, ['pending', 'approved'], true))
                     ->action(fn (Review $record) => app(AdminService::class)->moderateReview($record, 'hidden', auth()->user()))
                     ->successNotificationTitle(__('admin.actions.hidden')),
                 ViewAction::make(),

@@ -135,7 +135,14 @@ class ReaderService
 
         // Phase 3 (§2.3): feed the monthly reading-minutes ledger that
         // the subscription pool is split from. Never blocks the save.
-        $this->recordReadingMinutes($user, $book, (int) ($existing->total_minutes ?? 0), (int) $progress->total_minutes);
+        // Low-2 preview guard: an author's own-book reads NEVER feed
+        // the ledger — skipped here at the call site, so every progress
+        // entry point (web PUT, API, Livewire) is covered in one place.
+        // recordReadingMinutes() refuses own-book rows too (spec §2.2
+        // rule 4) and closePeriod() re-checks — defence in depth.
+        if (! $this->isOwnBook($user, $book)) {
+            $this->recordReadingMinutes($user, $book, (int) ($existing->total_minutes ?? 0), (int) $progress->total_minutes);
+        }
 
         // Phase 4 §4.5 — badge hooks only; no other progress rule changes.
         // (ReaderService has no finished() method — finish state is set
@@ -149,6 +156,18 @@ class ReaderService
         }
 
         return $progress->fresh();
+    }
+
+    /** Is this user the book's author? (books.author_id → authors.user_id.) */
+    protected function isOwnBook(User $user, Book $book): bool
+    {
+        if ($book->author_id === null) {
+            return false;
+        }
+
+        $authorUserId = DB::table('authors')->where('id', $book->author_id)->value('user_id');
+
+        return $authorUserId !== null && (int) $authorUserId === (int) $user->id;
     }
 
     /**

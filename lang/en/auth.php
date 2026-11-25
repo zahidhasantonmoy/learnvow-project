@@ -44,6 +44,13 @@ return [
 
     // Messages.
     'login_failed' => 'The phone number or password is incorrect.',
+    'device_limit' => 'You have reached the limit of 3 devices. Remove a device, then try logging in again.',
+    'remove_device' => 'Remove a device',
+    'device_removal_title' => 'Remove a device',
+    'device_removal_description' => 'Enter your phone number — we will send an OTP so you can remove a device without logging in.',
+    'device_removed' => 'Device removed. You can now log in on this device.',
+    'device_removal_no_devices' => 'No devices registered on this account.',
+    'device_removal_devices_hint' => 'Remove a device you no longer use, then log in again.',
     'too_many_attempts' => 'Too many failed attempts. Try again in :seconds seconds.',
     'otp_sent' => 'OTP sent.',
     'otp_invalid' => 'The OTP code is incorrect. Please try again.',

@@ -20,6 +20,12 @@
 
     <button type="submit" class="btn">{{ __('auth.login_button') }}</button>
 
+    @if($deviceLimitReached)
+        <p>
+            <a href="{{ route('devices.remove', ['locale' => app()->getLocale()]) }}">{{ __('auth.remove_device') }}</a>
+        </p>
+    @endif
+
     <p>
         <a href="{{ route('password.forgot', ['locale' => app()->getLocale()]) }}">{{ __('auth.forgot_password') }}</a>
     </p>

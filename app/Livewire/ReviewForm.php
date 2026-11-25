@@ -19,7 +19,10 @@ class ReviewForm extends Component
     public function mount(Book $book, BookService $books): void
     {
         $this->book = $book;
-        $this->canReview = $books->canRead(auth()->user(), $book);
+        // Preview (Low-2) is not a review entitlement: the author may
+        // read their own book but never review it.
+        $this->canReview = $books->canRead(auth()->user(), $book)
+            && ! $books->isOwnBook(auth()->user(), $book);
         $existing = auth()->user()
             ? Review::where('user_id', auth()->id())->where('book_id', $book->id)->first()
             : null;
@@ -35,6 +38,12 @@ class ReviewForm extends Component
         $user = auth()->user();
         if (! $user || ! $books->canRead($user, $this->book)) {
             $this->addError('review', __('books.review_requires_entitlement'));
+            return;
+        }
+
+        // Low-2 consequence: preview is not a review entitlement.
+        if ($books->isOwnBook($user, $this->book)) {
+            $this->addError('review', __('books.review_own_book'));
             return;
         }
 

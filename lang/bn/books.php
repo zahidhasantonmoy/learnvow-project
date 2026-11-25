@@ -52,6 +52,7 @@ return [
     'submit_review' => 'রিভিউ জমা দিন',
     'review_submitted_pending' => 'আপনার রিভিউ জমা হয়েছে — অনুমোদনের পর দেখা যাবে।',
     'review_requires_entitlement' => 'রিভিউ লিখতে হলে বইটি আপনার লাইব্রেরিতে থাকতে হবে।',
+    'review_own_book' => 'নিজের বইয়ে রিভিউ লেখা যাবে না।',
     'review_pending_notice' => 'আপনার রিভিউ অনুমোদনের অপেক্ষায় আছে।',
     'related_books' => 'একই ধরনের বই',
     'add_to_wishlist' => 'উইশলিস্টে যোগ করুন',
@@ -107,6 +108,8 @@ return [
     'help_payment_body' => 'পেমেন্ট বিকাশ/নগদে ম্যানুয়ালি করা হয় — TrxID দিয়ে যাচাই করা হয়।',
     'help_contact_heading' => 'যোগাযোগ',
     'help_contact_body' => 'আরও সাহায্য লাগলে সাহায্য পেজ থেকে আমাদের লিখুন।',
+    'help_faq_heading' => 'প্রায়শই জিজ্ঞাসিত প্রশ্ন',
+    'help_faq_general' => 'সাধারণ',
     'copies_sold' => ':count কপি বিক্রি হয়েছে',
 
     'collections_title' => 'আমার তাক',
